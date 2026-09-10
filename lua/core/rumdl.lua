@@ -27,6 +27,8 @@ function M.args()
 	local len = nixInfo(75, "settings", "markdown", "line_length")
 	return {
 		"--config",
+		'global.flavor = "pandoc"',
+		"--config",
 		"MD013.line-length = " .. tostring(len),
 		"--config",
 		"MD013.strict = false",
