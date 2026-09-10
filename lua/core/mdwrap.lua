@@ -30,6 +30,23 @@ local function width()
 	return nixInfo(75, "settings", "markdown", "line_length")
 end
 
+-- HARD LINE BREAKS
+--------------------------------------------------
+-- A markdown hard break is two trailing spaces or a trailing
+-- backslash: it keeps the line to itself when the document is
+-- exported (pandoc, typst) without turning it into its own
+-- paragraph. Reflowing across one would erase that, so a block
+-- is split into one segment per break and each is wrapped on
+-- its own.
+local function hard_break(line)
+	local spaces = line and line:match("(  +)$")
+	if spaces then
+		-- Normalised to exactly two: MD009 allows no more
+		return "  "
+	end
+	return line and line:match([[(\)$]])
+end
+
 -- WRAP COLUMN
 --------------------------------------------------
 
@@ -52,8 +69,25 @@ end
 -- REFLOWING EXISTING TEXT
 --------------------------------------------------
 
+-- Split a block on its hard breaks. Each segment carries the
+-- marker of the line that closes it, so it can be restored once
+-- the segment has been reflowed.
+local function segments(out, lines, first, last)
+	local start = first
+	for row = first, last do
+		local marker = hard_break(lines[row])
+		if marker then
+			table.insert(out, { start, row, marker })
+			start = row + 1
+		end
+	end
+	if start <= last then
+		table.insert(out, { start, last })
+	end
+end
+
 -- Collect prose blocks without descending into children
-local function collect(node, out)
+local function collect(node, out, lines)
 	for child in node:iter_children() do
 		local t = child:type()
 		if child:named() and not SKIP[t] then
@@ -65,10 +99,10 @@ local function collect(node, out)
 					erow = erow - 1
 				end
 				if erow >= srow then
-					table.insert(out, { srow + 1, erow + 1 })
+					segments(out, lines, srow + 1, erow + 1)
 				end
 			else
-				collect(child, out)
+				collect(child, out, lines)
 			end
 		end
 	end
@@ -93,8 +127,10 @@ function M.wrap(bufnr)
 		return
 	end
 
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
 	local ranges = {}
-	collect(tree:root(), ranges)
+	collect(tree:root(), ranges, lines)
 	if #ranges == 0 then
 		return
 	end
@@ -104,8 +140,6 @@ function M.wrap(bufnr)
 	table.sort(ranges, function(a, b)
 		return a[1] > b[1]
 	end)
-
-	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
 	-- Reflow in a scratch buffer and write the result back in a
 	-- single edit. Running `gq` on the real buffer costs a full
@@ -118,7 +152,8 @@ function M.wrap(bufnr)
 
 	-- Copy the options `gq` reads. Setting `filetype` instead
 	-- would fire FileType and attach Treesitter all over again.
-	vim.bo[scratch].textwidth = width()
+	local tw = width()
+	vim.bo[scratch].textwidth = tw
 	vim.bo[scratch].formatoptions = vim.bo[bufnr].formatoptions
 	vim.bo[scratch].formatlistpat = vim.bo[bufnr].formatlistpat
 	vim.bo[scratch].comments = vim.bo[bufnr].comments
@@ -132,9 +167,34 @@ function M.wrap(bufnr)
 	vim.bo[scratch].formatexpr = ""
 	vim.bo[scratch].indentexpr = ""
 
+	local function line_at(row)
+		return vim.api.nvim_buf_get_lines(scratch, row - 1, row, false)[1] or ""
+	end
+	local function set_line(row, text)
+		vim.api.nvim_buf_set_lines(scratch, row - 1, row, false, { text })
+	end
+
 	vim.api.nvim_buf_call(scratch, function()
 		for _, range in ipairs(ranges) do
-			vim.cmd(("silent keepjumps normal! %dGgq%dG"):format(range[1], range[2]))
+			local first, last, marker = range[1], range[2], range[3]
+
+			-- `gq` drops trailing whitespace and would leave the
+			-- marker in the middle of the joined text, so it is
+			-- taken off first. The segment also wraps short by its
+			-- width, since MD013 counts those columns too.
+			if marker then
+				local text = line_at(last)
+				set_line(last, (text:sub(1, #text - #marker):gsub("%s+$", "")))
+			end
+			vim.bo[scratch].textwidth = marker and (tw - #marker) or tw
+
+			local before = vim.api.nvim_buf_line_count(scratch)
+			vim.cmd(("silent keepjumps normal! %dGgq%dG"):format(first, last))
+			last = last + vim.api.nvim_buf_line_count(scratch) - before
+
+			if marker then
+				set_line(last, line_at(last) .. marker)
+			end
 		end
 	end)
 

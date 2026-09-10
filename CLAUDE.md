@@ -345,6 +345,20 @@ so other filetypes are left alone.
   `indented_code_block`, `pipe_table`, `html_block` and headings. Ranges
   are applied bottom-up so line numbers stay valid. Formatting the whole
   `list` node at once does **not** work: nested list indentation breaks.
+- **Hard line breaks are preserved.** A line ending in two spaces or in a
+  backslash is a markdown hard break: pandoc and typst keep it on a line
+  of its own without making it a paragraph, which is how verse, lyrics
+  and subtitle-style lists are written. `gq` would collapse the whole
+  block into one paragraph and leave the two spaces stranded mid-line, so
+  `mdwrap` splits an `inline` node into one segment per break and wraps
+  each on its own. The marker is taken off before `gq` and put back
+  after, and the segment wraps at `line_length - 2`, because MD013 counts
+  those trailing columns too. Space markers are normalised to exactly
+  two, the most MD009 allows. A logical line longer than the limit is
+  wrapped onto continuation lines with no marker of their own, so the
+  export still shows it as a single line — the source obeys the 75
+  columns, the PDF keeps one line per line, and no blank lines are
+  needed between them.
 - The reflow runs in an **unattached scratch buffer**, and the result is
   written back with a single `nvim_buf_set_lines`. Do not move `gq` back
   onto the real buffer: every paragraph becomes its own buffer change, and
