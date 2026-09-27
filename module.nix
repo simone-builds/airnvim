@@ -554,7 +554,18 @@ in
             nvim-lint
 
             # Markdown
-            render-markdown-nvim
+            # The heading `icons` callback gets no buffer upstream;
+            # the patch adds it, so heading_number() in
+            # lua/plugins/markdown.lua can count the document's
+            # level-1 headings and drop the title's number.
+            (render-markdown-nvim.overrideAttrs (old: {
+              postPatch = (old.postPatch or "") + ''
+                substituteInPlace lua/render-markdown/render/markdown/heading.lua \
+                  --replace-fail \
+                    "sections = self.node:sections()," \
+                    "sections = self.node:sections(), buf = self.context.buf,"
+              '';
+            }))
             # Browser preview: pure lua, its own server runs
             # inside nvim, no node or deno (4 MB).
             # Server:start ends in a nested `uv.run()` that never

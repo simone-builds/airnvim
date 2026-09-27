@@ -340,6 +340,18 @@ so other filetypes are left alone.
   which the rules mark `unfixable`: `rumdl fmt` on save used to raise the
   level silently. `position = "inline"`, since a number is wider than the
   `#` marks it replaces and `overlay` would cover the text.
+- **A document with a single H1 treats it as its title**: the H1 gets no
+  number and the levels below count from it (`1`, `2`, `2.1` instead of
+  `1.1`, `1.2`, `1.2.1`). With two or more H1 they are chapters,
+  numbered as above; with none, the hierarchy still shows (`0.1`), as
+  asked. The PDF keeps numbering from H1 in every case: only the editor
+  changes. render-markdown passes the `icons` callback no buffer, so
+  module.nix patches `buf = self.context.buf` into its context
+  (`--replace-fail`). `h1_count()` reads only the direct children of
+  the top-level sections, cached per changedtick: a Treesitter query
+  over the whole tree took 66 ms on a 635 KB file at every change,
+  this takes 0.09 ms. Using the current buffer instead of `ctx.buf`
+  would number a split by the rules of the other window.
 - Levels 1-3 carry a rule under the text: render-markdown's heading
   "background" set to `MdHeadingRule1-3` (core/theme.lua), which are
   underlines with `sp` in the heading colour and no fill: solid, dashed,

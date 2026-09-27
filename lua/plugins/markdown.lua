@@ -10,15 +10,77 @@
 -- lua/core/theme.lua, which derives them from the desktop
 -- palette, so the buffer follows the wallpaper.
 
+-- Level-1 headings in a buffer, stopping at two: all that
+-- heading_number() needs. Counted once per buffer change, not
+-- once per heading drawn. Through Treesitter, so a `#` in code
+-- or a `#tag` is not a heading.
+-- Only the direct children of the top-level sections are read:
+-- an ATX H1 opens one, and a setext H1 (`===`) sits inside one.
+-- A query over the whole tree took 66 ms on a 635 KB file, on
+-- every change; this reads a few dozen nodes.
+local h1_cache = {}
+
+local function is_h1(node)
+	local t = node:type()
+	local mark = t == "atx_heading" and node:named_child(0)
+		or t == "setext_heading" and node:named_child(node:named_child_count() - 1)
+	return mark and (mark:type() == "atx_h1_marker" or mark:type() == "setext_h1_underline")
+end
+
+local function h1_count(buf)
+	local tick = vim.api.nvim_buf_get_changedtick(buf)
+	local hit = h1_cache[buf]
+	if hit and hit.tick == tick then
+		return hit.count
+	end
+
+	local count = 0
+	local ok, parser = pcall(vim.treesitter.get_parser, buf, "markdown")
+	local tree = ok and parser and parser:parse()[1]
+	for section in tree and tree:root():iter_children() or function() end do
+		if section:type() == "section" then
+			for child in section:iter_children() do
+				if is_h1(child) then
+					count = count + 1
+				end
+			end
+		end
+		if count > 1 then
+			break
+		end
+	end
+	h1_cache[buf] = { tick = tick, count = count }
+	return count
+end
+
+vim.api.nvim_create_autocmd("BufWipeout", {
+	callback = function(args)
+		h1_cache[args.buf] = nil
+	end,
+})
+
 -- Heading numbers. Drawn in place of the `#` marks as 1, 1.1,
--- 1.2.1 and so on, counted from level 1: rendered only, never
--- written to the file, since the PDF export numbers headings
--- itself and would number them twice. `sections` holds the
--- count at each level; a skipped level stays as 0 (1.0.1) on
--- purpose, next to rumdl's MD001 warning, so it gets fixed in
--- the source rather than hidden here.
+-- 1.2.1 and so on: rendered only, never written to the file,
+-- since the PDF export numbers headings itself and would
+-- number them twice. `sections` holds the count at each level;
+-- a skipped level stays as 0 (1.0.1) on purpose, next to
+-- rumdl's MD001 warning, so it gets fixed in the source rather
+-- than hidden here. That includes a document with no level-1
+-- heading at all: 0.1, 0.2.
+-- A single level-1 heading is the document's title: it gets no
+-- number, and the levels below count from it (1, 2, 2.1 rather
+-- than 1.1, 1.2, 1.2.1). With two or more, level 1 is a
+-- chapter and is numbered. `ctx.buf` comes from a patch to
+-- render-markdown in module.nix: upstream passes no buffer.
 local function heading_number(ctx)
-	return table.concat(ctx.sections, ".") .. " "
+	local sections = ctx.sections
+	if ctx.buf and h1_count(ctx.buf) == 1 then
+		if ctx.level == 1 then
+			return ""
+		end
+		sections = vim.list_slice(sections, 2)
+	end
+	return table.concat(sections, ".") .. " "
 end
 
 -- WezTerm image ghosts --
