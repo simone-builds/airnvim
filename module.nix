@@ -613,8 +613,22 @@ in
               ]
             ))
           ]
-          # Inline images: the plugin drags imagemagick in
-          ++ lib.optional cfg.markdown.images.enable image-nvim;
+          # Inline images: the plugin drags imagemagick in.
+          # Its on_lines handler queued a full re-query of every
+          # image in the document per buffer edit, never merged:
+          # a format writing 150 hunks ran 150 re-queries, 2.6 s
+          # on a 64 KB file and minutes on 635 KB. The patch runs
+          # one render per event-loop turn, however many edits.
+          ++ lib.optional cfg.markdown.images.enable (
+            image-nvim.overrideAttrs (old: {
+              postPatch = (old.postPatch or "") + ''
+                substituteInPlace lua/image/utils/document.lua \
+                  --replace-fail \
+                    $'on_lines = function()\n        render(ctx)\n      end,' \
+                    $'on_lines = function()\n        if ctx.render_pending then return end\n        ctx.render_pending = true\n        vim.schedule(function()\n          ctx.render_pending = false\n          render(ctx)\n        end)\n      end,'
+              '';
+            })
+          );
       };
 
       # --- Optional groups (feature flags) ---

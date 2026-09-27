@@ -75,11 +75,13 @@ return {
 					stdin = true,
 				},
 			},
-			-- In markdown, rewrap existing text before formatting
-			-- (rumdl does not do it).
+			-- Markdown runs its own pipeline (core/rumdl.lua):
+			-- rumdl does not rewrap text, so mdwrap sits between
+			-- two rumdl passes. nil: nothing is left to conform.
 			format_on_save = function(bufnr)
 				if vim.bo[bufnr].filetype == "markdown" then
-					require("core.mdwrap").wrap(bufnr)
+					require("core.rumdl").format(bufnr)
+					return nil
 				end
 				return {
 					timeout_ms = 3000,

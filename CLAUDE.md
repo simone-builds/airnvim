@@ -390,7 +390,26 @@ so other filetypes are left alone.
   (images need no alt text: pasted screenshots rarely get one). The line
   limit applies to prose only.
 - `lua/core/rumdl.lua` is the single place exposing the rules file path to
-  `lsp.lua` and `format.lua`.
+  `lsp.lua` and `format.lua`, and holds the **save pipeline**,
+  `format(bufnr)`, used by both `:w` (format_on_save, which returns nil
+  for markdown) and `:MdFormatDir`: trailing spaces cut to two, rumdl,
+  mdwrap, rumdl. The first rumdl pass exists so mdwrap measures lines
+  after list indentation and markers are fixed; with mdwrap first,
+  rumdl moved a 4-space nested item to 2 and the next save rewrapped
+  it. Measured with every plugin attached, the extra pass costs
+  ~40-50 ms per save at 64 KB and 0.05-0.2 s at 635 KB.
+- The cut to two spaces must come first: rumdl's MD009 fix **deletes**
+  a run of 3+ trailing spaces, hard break included (a verse ending in
+  three spaces joined the next one), and has no option to shorten it
+  instead.
+- rumdl runs through conform with `TIMEOUT_MS` (10 s). The 3 s default
+  was exceeded by the first save of a 635 KB file, and conform then
+  dropped rumdl silently: the file was saved half formatted.
+- Benchmark a save with every plugin attached, timed until the event
+  loop drains (a `vim.schedule` flag after the work). A `nofile`
+  scratch buffer skips the LSP and image.nvim and gave numbers several
+  times too low; work queued by edits also runs inside the *next*
+  conform wait, so per-step timings blame the wrong step.
 - Text wrapping is handled by `core/mdwrap.lua`, not prettier. The module
   does three things: sets `textwidth` (wrap as you type), removes the `t`
   flag from `formatoptions` inside code blocks (checked on line change, not
@@ -446,11 +465,25 @@ so other filetypes are left alone.
   (`##` is a YAML comment) and fenced code are skipped. rumdl's MD026
   still reports a lone `#tag ... .` line as a heading ending in
   punctuation; its fix changes nothing, so it is only a false warning.
+- **Obsidian callout headers and display math are never reflowed.**
+  Treesitter sees `> [!note]` as quote text, and joining the body onto
+  it made the body the callout's title (text on the header line is the
+  title in Obsidian). `segments()` leaves out a header line, so the
+  body wraps below it, and `$$` lines plus what they enclose, which
+  `gq` had collapsed into one `$$ ... $$` line. Pandoc definition
+  lists (`: def`) and fenced divs (`:::`) are still joined like prose:
+  left alone on purpose, since they are not used here.
 - Because the scratch buffer has no filetype, the options `gq` reads
   (`formatoptions`, `formatlistpat`, `comments`, indentation) are copied
   across explicitly. Setting `filetype` there instead would fire `FileType`
   and attach Treesitter again, undoing the whole point.
-- Three traps solved in there, not to be reintroduced:
+- Four traps solved in there, not to be reintroduced:
+  - `gq` over a multi-line range reads **every** line matching
+    `formatlistpat` as a new list item: a wrapped line opening with
+    "1954. " got a hanging indent and a quote came out as `> >    `.
+    Each segment is `:join`ed into one line first (`j` in
+    `formatoptions` drops the `>` leaders) and `gqq` wraps that, so
+    only the real marker on the first line counts;
   - when an LSP server attaches it sets
     `formatexpr = v:lua.vim.lsp.formatexpr()`, so `gq` asks the server to
     format and `rumdl` does **not** wrap prose;
@@ -461,14 +494,22 @@ so other filetypes are left alone.
     the `c`/`q` flags active `gq` treats them as comment markers and gets
     numbered-list indentation wrong: keep only `comments = "n:>"` for
     quotes and leave the rest to `formatlistpat` plus the `n` flag.
-- Because of the first two, markdown buffers get `formatexpr` and
-  `indentexpr` cleared on `LspAttach` and `BufWinEnter`, and again inside
-  `M.wrap` for safety.
+- Because of the LSP and Treesitter traps, markdown buffers get
+  `formatexpr` and `indentexpr` cleared on `LspAttach` and
+  `BufWinEnter`, and again inside `M.wrap` for safety.
 - `image.nvim` uses the `kitty` backend, which also covers WezTerm, and
   requires `imagemagick`. It is gated by `markdown.images.enable`: the
   plugin reaches imagemagick through `luajit-magick`, so the weight rides
   on the plugin and **removing the CLI package alone saves nothing**
   (measured: identical closure before and after).
+- **module.nix patches image.nvim's `on_lines` handler** to merge
+  renders: upstream queues a full re-query of every image in the
+  document (treesitter over the whole buffer) per edit. A save writing
+  150 hunks ran 150 of them: 2.6 s on a 64 KB file, over two minutes
+  on 635 KB, with either save pipeline. Patched, one render per
+  event-loop turn: 0.95 s at 64 KB. `--replace-fail` breaks the build
+  if upstream changes the handler; check it still needs the patch
+  before adapting it.
 - Images are drawn below their link all the time
   (`only_render_image_at_cursor = false`), not in a float on hover.
   `max_width` is in terminal cells, not pixels, so it reuses

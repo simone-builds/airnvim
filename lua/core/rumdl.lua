@@ -7,6 +7,12 @@
 
 local M = {}
 
+-- Time allowed to one rumdl run. A first save of a 635 KB file
+-- took ~2.8 s of rumdl alone and went past 3 s once the LSP and
+-- linters shared the CPU: conform dropped rumdl and the file was
+-- saved half formatted. The editor waits this long at most.
+M.TIMEOUT_MS = 10000
+
 -- Path to the rules file, nil outside the Nix wrapper --
 function M.config_path()
 	local path = nixInfo(nil, "settings", "markdown", "rules_file")
@@ -39,8 +45,27 @@ function M.args()
 		"--config",
 		"MD013.tables = false",
 		"--config",
-		'global.disable = ["MD024", "MD025", "MD041"]',
+		'global.disable = ["MD018", "MD024", "MD025", "MD041", "MD045"]',
 	}
+end
+
+-- SAVE PIPELINE
+--------------------------------------------------
+-- rumdl, mdwrap, rumdl: what `:w` and `:MdFormatDir` run on a
+-- markdown buffer. The first pass fixes list indentation and
+-- markers before mdwrap measures the lines. With mdwrap first,
+-- rumdl then moved text sideways (a nested item from 4 spaces
+-- to 2) and the next save rewrapped it again. The extra pass
+-- measured +6..40 ms at 64 KB, +0.3..0.6 s at 635 KB.
+function M.format(bufnr)
+	local conform = require("conform")
+	local mdwrap = require("core.mdwrap")
+	local opts = { bufnr = bufnr, timeout_ms = M.TIMEOUT_MS, formatters = { "rumdl" } }
+	-- rumdl deletes 3+ trailing spaces with their hard break
+	mdwrap.normalize_breaks(bufnr)
+	conform.format(opts)
+	mdwrap.wrap(bufnr)
+	conform.format(opts)
 end
 
 return M

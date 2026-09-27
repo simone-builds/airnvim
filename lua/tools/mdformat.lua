@@ -1,8 +1,8 @@
 -- FORMAT A DIRECTORY OF MARKDOWN FILES
 --------------------------------------------------
 -- `:MdFormatDir [dir]` runs on every `.md` file of a directory
--- what `:w` runs on a markdown buffer: core.mdwrap, then
--- conform with rumdl. Subdirectories are left alone. With no
+-- what `:w` runs on a markdown buffer: core.rumdl.format(),
+-- i.e. rumdl, mdwrap, rumdl. Subdirectories are left alone. With no
 -- argument it takes the current file's directory, the one Oil
 -- is showing, or `:pwd`.
 --
@@ -90,11 +90,9 @@ local function format_file(path)
 			end)
 		end
 
-		-- The same two steps as format_on_save in
-		-- plugins/format.lua
+		-- The same pipeline as `:w`
 		local before = text(bufnr)
-		require("core.mdwrap").wrap(bufnr)
-		require("conform").format({ bufnr = bufnr, timeout_ms = 3000 })
+		require("core.rumdl").format(bufnr)
 		if text(bufnr) == before then
 			return "unchanged"
 		end

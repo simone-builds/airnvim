@@ -109,25 +109,35 @@ local function front_matter_end(lines)
 	return 0
 end
 
+-- Fenced code, for the line-by-line passes: given the fence
+-- open before `line`, returns the one open after it and
+-- whether `line` is prose. A fence closes on the same
+-- character, at least as long.
+local function track_fence(line, fence)
+	local mark = line:match("^%s*(```+)") or line:match("^%s*(~~~+)")
+	if fence then
+		if mark and mark:sub(1, 1) == fence:sub(1, 1) and #mark >= #fence and line:match("^%s*[`~]+%s*$") then
+			return nil, false
+		end
+		return fence, false
+	elseif mark then
+		return mark, false
+	end
+	return nil, true
+end
+
 -- Copy of `lines` with headings fixed and blanks added around
 -- them and around images. Fenced code and front matter are
 -- left alone: syntax shown as an example stays as it is, and
--- `##` is a comment in YAML. A fence closes on the same
--- character, at least as long.
+-- `##` is a comment in YAML.
 local function space_blocks(lines)
 	local out, fence = {}, nil
 	local front = front_matter_end(lines)
 	for i, line in ipairs(lines) do
-		local mark = line:match("^%s*(```+)") or line:match("^%s*(~~~+)")
-		if fence then
-			if mark and mark:sub(1, 1) == fence:sub(1, 1) and #mark >= #fence and line:match("^%s*[`~]+%s*$") then
-				fence = nil
-			end
-		elseif mark then
-			fence = mark
-		end
+		local outside
+		fence, outside = track_fence(line, fence)
 
-		local prose = i > front and not fence and not mark
+		local prose = i > front and outside
 		local heading = prose and fix_heading(line)
 		local alone = heading or (prose and is_image_line(line))
 		if alone and #out > 0 and out[#out]:match("%S") then
@@ -139,6 +149,21 @@ local function space_blocks(lines)
 		end
 	end
 	return out
+end
+
+-- Trailing runs of three or more spaces cut to two, outside
+-- fenced code. rumdl's MD009 fix deletes such a run whole and
+-- the hard break goes with it (`verse,   ` joined the next
+-- line); two spaces it keeps. core/rumdl.lua runs this before
+-- its first rumdl pass.
+function M.normalize_breaks(bufnr)
+	local fence, outside
+	for i, line in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+		fence, outside = track_fence(line, fence)
+		if outside and line:match("%S   +$") then
+			vim.api.nvim_buf_set_lines(bufnr, i - 1, i, false, { (line:gsub("  +$", "  ")) })
+		end
+	end
 end
 
 -- WRITING BACK
@@ -165,16 +190,39 @@ end
 -- REFLOWING EXISTING TEXT
 --------------------------------------------------
 
+-- An Obsidian callout header, `> [!note]` or `> > [!tip]- Title`.
+-- Treesitter sees plain quote text, and joining the body onto
+-- this line made the body the callout's title.
+local function is_callout(line)
+	return line:match("^%s*>[%s>]*%[!%w[%w-]*%][+-]?") ~= nil
+end
+
 -- Split a block on its hard breaks. Each segment carries the
 -- marker of the line that closes it, so it can be restored once
--- the segment has been reflowed.
+-- the segment has been reflowed. Callout headers and display
+-- math (`$$` lines and what they enclose) are left out of every
+-- segment: never joined to their neighbours, never wrapped.
 local function segments(out, lines, first, last)
-	local start = first
+	local start, math = first, false
 	for row = first, last do
-		local marker = hard_break(lines[row])
-		if marker then
-			table.insert(out, { start, row, marker })
+		local line = lines[row]
+		local dollars = line:match("^%s*%$%$")
+		if math or dollars or is_callout(line) then
+			if start < row then
+				table.insert(out, { start, row - 1 })
+			end
 			start = row + 1
+			-- A line holding both `$$` (`$$ x $$ text`) opens nothing
+			local _, pairs = line:gsub("%$%$", "")
+			if dollars and pairs < 2 then
+				math = not math
+			end
+		else
+			local marker = hard_break(line)
+			if marker then
+				table.insert(out, { start, row, marker })
+				start = row + 1
+			end
 		end
 	end
 	if start <= last then
@@ -258,6 +306,8 @@ function M.wrap(bufnr)
 	local tw = width()
 	vim.bo[scratch].textwidth = tw
 	vim.bo[scratch].formatoptions = vim.bo[bufnr].formatoptions
+	-- `j`: the join below drops the `>` leaders of quote lines
+	vim.bo[scratch].formatoptions = vim.bo[scratch].formatoptions:gsub("j", "") .. "j"
 	vim.bo[scratch].formatlistpat = vim.bo[bufnr].formatlistpat
 	vim.bo[scratch].comments = vim.bo[bufnr].comments
 	vim.bo[scratch].expandtab = vim.bo[bufnr].expandtab
@@ -291,8 +341,16 @@ function M.wrap(bufnr)
 			end
 			vim.bo[scratch].textwidth = marker and (tw - #marker) or tw
 
+			-- Joined into one line first: `gq` takes any line of
+			-- its range matching formatlistpat for a new list
+			-- item, so a wrapped line opening with "1954. " got a
+			-- hanging indent and a quote came out as `> >    `.
+			-- Joined, only the first line's real marker is seen.
 			local before = vim.api.nvim_buf_line_count(scratch)
-			vim.cmd(("silent keepjumps normal! %dGgq%dG"):format(first, last))
+			if last > first then
+				vim.cmd(("silent keepjumps %d,%djoin"):format(first, last))
+			end
+			vim.cmd(("silent keepjumps normal! %dGgqq"):format(first))
 			last = last + vim.api.nvim_buf_line_count(scratch) - before
 
 			if marker then
