@@ -397,5 +397,9 @@ reads the title and date from it.
 - `:PreviewMd` opens a live preview in the browser, `:PreviewMd stop`
   closes it
 - `:MdWrap` rewraps the paragraphs; saving does it too
+- `:MdFormatDir` formats every `.md` in the file's directory at once
+- `#word` is a tag and is never touched, even at the start of a line;
+  `##Title` without its space becomes `## Title` on save. A level-1
+  heading needs its space typed: `#Title` stays a tag
 - `:SpellToggle` or `␣z` checks spelling in this buffer
 - `:NvCheat` opens the Neovim cheatsheet

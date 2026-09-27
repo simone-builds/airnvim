@@ -80,11 +80,43 @@ local function is_image_line(line)
 		or line:match("^!%[%[.-%]%]%s*$") ~= nil
 end
 
--- Copy of `lines` with the blanks added. Fenced code is left
--- alone, so image syntax shown as an example stays as it is.
--- A fence closes on the same character, at least as long.
-local function space_images(lines)
+-- HEADINGS MISSING THEIR SPACE
+--------------------------------------------------
+-- `##Title` is paragraph text until it gets its space: the
+-- reflow pulled it into the lines around it, and rumdl's MD018
+-- then made a heading of the whole merged line. Two to six
+-- marks followed by a letter (accented ones too) get the
+-- space here. A single `#word` is an Obsidian tag, an ordinary
+-- word wherever it lands, so it is never touched; MD018 is
+-- disabled in module.nix for the same reason.
+local function fix_heading(line)
+	local marks, rest = line:match("^(#+)([%a\128-\255].*)$")
+	if marks and #marks >= 2 and #marks <= 6 then
+		return marks .. " " .. rest
+	end
+end
+
+-- Last line of the YAML front matter, 0 when there is none
+local function front_matter_end(lines)
+	if lines[1] ~= "---" then
+		return 0
+	end
+	for i = 2, #lines do
+		if lines[i] == "---" or lines[i] == "..." then
+			return i
+		end
+	end
+	return 0
+end
+
+-- Copy of `lines` with headings fixed and blanks added around
+-- them and around images. Fenced code and front matter are
+-- left alone: syntax shown as an example stays as it is, and
+-- `##` is a comment in YAML. A fence closes on the same
+-- character, at least as long.
+local function space_blocks(lines)
 	local out, fence = {}, nil
+	local front = front_matter_end(lines)
 	for i, line in ipairs(lines) do
 		local mark = line:match("^%s*(```+)") or line:match("^%s*(~~~+)")
 		if fence then
@@ -95,12 +127,14 @@ local function space_images(lines)
 			fence = mark
 		end
 
-		local image = not fence and not mark and is_image_line(line)
-		if image and #out > 0 and out[#out]:match("%S") then
+		local prose = i > front and not fence and not mark
+		local heading = prose and fix_heading(line)
+		local alone = heading or (prose and is_image_line(line))
+		if alone and #out > 0 and out[#out]:match("%S") then
 			table.insert(out, "")
 		end
-		table.insert(out, line)
-		if image and lines[i + 1] and lines[i + 1]:match("%S") then
+		table.insert(out, heading or line)
+		if alone and lines[i + 1] and lines[i + 1]:match("%S") then
 			table.insert(out, "")
 		end
 	end
@@ -184,7 +218,7 @@ function M.wrap(bufnr)
 	end
 
 	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-	local spaced = space_images(lines)
+	local spaced = space_blocks(lines)
 
 	-- The spaced text is parsed as a string: it is not in the
 	-- buffer yet, and the result is written back in one go
@@ -199,7 +233,8 @@ function M.wrap(bufnr)
 
 	local ranges = {}
 	collect(tree:root(), ranges, spaced)
-	if #ranges == 0 and #spaced == #lines then
+	-- A fixed heading may change a line without adding one
+	if #ranges == 0 and vim.deep_equal(spaced, lines) then
 		return
 	end
 

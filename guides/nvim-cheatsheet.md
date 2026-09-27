@@ -192,6 +192,8 @@ They go through the clipboard: afterwards it holds the selected words.
 - `:PreviewMd` live preview in the browser, follows the cursor
 - `:PreviewMd stop` end the preview
 - `:MdWrap` rewrap every paragraph; saving does it too
+- `:MdFormatDir` format every `.md` in the current file's directory as
+  saving would, subdirectories excluded; see airnvim commands below
 - `:RenderMarkdown toggle` show the raw text instead of the rendering
 
 ### Headings and folds
@@ -434,6 +436,13 @@ searches every command, these included.
 - `:MdGuide` the markdown syntax guide
 - `:SpellToggle` spell checking on, off; `␣z` does the same
 - `:MdWrap` rewrap every paragraph of a markdown file
+- `:MdFormatDir` format every `.md` in a directory, like saving each one:
+  - no argument: the current file's directory, or the one Oil shows
+  - `:MdFormatDir path` another directory; `Tab` completes it
+  - asks first; only files that change are written
+  - subdirectories are left alone
+  - a file open with unsaved changes is skipped
+  - a bar shows the progress; `q` stops after the current file
 - `:PreviewMd` browser preview; `:PreviewMd stop` ends it
 - `:PasteImage` paste the clipboard image; `␣ip` does the same
 - `:LzeStatus` installed plugins and whether they are loaded

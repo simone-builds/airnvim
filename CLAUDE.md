@@ -87,6 +87,7 @@ lua/tools/
   lze.lua             # :LzeNix, :LzeStatus
   docs.lua            # :MdGuide, :NvCheat -> guides/
   markdown.lua        # :PreviewMd, :PasteImage and its name popup
+  mdformat.lua        # :MdFormatDir, format a directory of .md files
 
 lua/plugins/
   ui.lua              # lualine, alpha, devicons, fidget, todo, colorizer
@@ -383,7 +384,8 @@ so other filetypes are left alone.
   `tables` exemptions **are ignored**. The generated file sets
   `strict = false`, otherwise long headings and code lines get flagged
   again.
-- Disabled rules: `MD024` (headings with the same text), `MD025` (multiple
+- Disabled rules: `MD018` (`#tag` is not a heading missing its space,
+  see below), `MD024` (headings with the same text), `MD025` (multiple
   level-1 headings), `MD041` (first line need not be a heading), `MD045`
   (images need no alt text: pasted screenshots rarely get one). The line
   limit applies to prose only.
@@ -433,6 +435,17 @@ so other filetypes are left alone.
   image line, and pandoc only turns an image alone in its paragraph into
   a figure with a caption. The spaced text is parsed with a string parser,
   since it is not in the buffer yet. Lone image lines are never wrapped.
+- **`#word` is an Obsidian tag, `##Word` a heading missing its space.**
+  rumdl's MD018 made a heading of any line starting with `#word`, a tag
+  the reflow had moved there included, so MD018 is disabled. The same
+  pass that spaces images (`space_blocks()`) turns 2-6 marks followed
+  by a letter into `## Word` with a blank line on each side; before
+  that, `gq` merged `##Word` into the paragraph and MD018 then made a
+  heading of the whole merged line. A single `#` is never touched: a
+  `#Title` typed without its space stays a tag, by choice. Front matter
+  (`##` is a YAML comment) and fenced code are skipped. rumdl's MD026
+  still reports a lone `#tag ... .` line as a heading ending in
+  punctuation; its fix changes nothing, so it is only a false warning.
 - Because the scratch buffer has no filetype, the options `gq` reads
   (`formatoptions`, `formatlistpat`, `comments`, indentation) are copied
   across explicitly. Setting `filetype` there instead would fire `FileType`
@@ -518,6 +531,17 @@ so other filetypes are left alone.
 - `guides/` ships in the store with the config and is opened read-only
   by `:MdGuide` / `:NvCheat`. Keep both files clean under the generated
   rumdl rules; the cheatsheet uses headings and plain lists, no tables.
+- `:MdFormatDir` (`tools/mdformat.lua`) runs the save pipeline, mdwrap
+  then conform, on every `.md` of one directory, subdirectories
+  excluded. Default: the current file's directory, Oil's, or `:pwd`.
+  Each file is loaded into a buffer, formatted, and written with
+  `noautocmd` only if its text changed (BufWritePre would format it
+  twice); clean files keep their mtime. Buffers it loaded are wiped
+  after. It skips a buffer with unsaved changes, and a file whose swap
+  file shows another nvim has it (`SwapExists` answers read-only).
+  One file per `vim.defer_fn(0)` tick, not `vim.schedule`: only a
+  timer lets typed keys in, so `q` in the progress float can cancel.
+  Measured: 60 files in 4.6 s, output identical to `:w` file by file.
 - `startup.cowsay` defaults to off. It costs 60 MB, because cowsay is perl,
   and ~39 ms of blocking `io.popen` at every startup. Do not turn the
   default back on: the static header in `ui.lua` is the fallback.

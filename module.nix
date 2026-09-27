@@ -158,7 +158,13 @@ in
             # MD041: a file need not start with `#`
             # MD045: images need no alt text; pasted screenshots
             #        often have none, and pandoc makes it a caption
-            disable = ["MD024", "MD025", "MD041", "MD045"]
+            # MD018: `#word` at the start of a line is an Obsidian
+            #        tag, not a heading missing its space; the fix
+            #        turned `#tag` into `# tag`. `##Title` with two
+            #        or more marks is fixed by core/mdwrap.lua.
+            #        The obsidian flavor knows tags but breaks the
+            #        pandoc info strings above.
+            disable = ["MD018", "MD024", "MD025", "MD041", "MD045"]
             # MD001 (a skipped heading level) is only reported: the
             # formatter on save would otherwise quietly raise it one
             # level, and which level was meant is the author's call
