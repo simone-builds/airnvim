@@ -182,8 +182,8 @@ They go through the clipboard: afterwards it holds the selected words.
   a name, the file is saved as `assets/YYYY-MM-DD_HH-MM-SS_name.png` next
   to the note, and the link is written for you. An empty name keeps the
   date only
-- pasted links end in `{ width=15cm }`: the image width in the PDF, set
-  by `settings.markdown.images.paste_width` in Nix
+- pasted links end in `{ width=15cm }`: the image width in the PDF, set by
+  `settings.markdown.images.paste_width` in Nix
 - images show inside the buffer, below their link, as wide as the text
 - dropping an image file onto the terminal inserts a link to it
 
@@ -199,12 +199,12 @@ They go through the clipboard: afterwards it holds the selected words.
 ### Headings and folds
 
 - `]]` `[[` next, previous heading
-- `␣t` or `gO` table of contents: every heading, indented by level;
-  `Enter` jumps to it, `:q` closes the list
-- headings show as 1, 1.1, 1.1.1: the numbers are drawn, not written in
-  the file, so a PDF export does not number them twice
-- a number with a 0 in it (1.0.1) means a skipped level: the linter
-  warns about it too, fix the number of `#` in the source
+- `␣t` or `gO` table of contents: every heading, indented by level; `Enter`
+  jumps to it, `:q` closes the list
+- headings show as 1, 1.1, 1.1.1: the numbers are drawn, not written in the
+  file, so a PDF export does not number them twice
+- a number with a 0 in it (1.0.1) means a skipped level: the linter warns
+  about it too, fix the number of `#` in the source
 - `za` open or close the fold under the cursor
 - `zc` `zo` close, open the fold under the cursor
 - `zM` close every fold: only headings stay visible
@@ -225,10 +225,10 @@ They go through the clipboard: afterwards it holds the selected words.
 ### Links
 
 - `Enter` or `Ctrl`+click on a link: a note opens here, at its `#heading`
-  if the link names one; a web address goes to the browser, other files
-  to their program. `^o` comes back
-- a link to a note that does not exist asks to create it, next to the
-  note holding the link
+  if the link names one; a web address goes to the browser, other files to
+  their program. `^o` comes back
+- a link to a note that does not exist asks to create it, next to the note
+  holding the link
 - `␣il` insert a link: pick a note, `[](path.md)` is written with the
   cursor between the brackets for the text (`Esc` leaves it empty)
 - `␣il` on a selection: the selected words become the link text
@@ -458,3 +458,292 @@ searches every command, these included.
 - `:checkhealth` diagnose problems
 - start screen: `n` new file, `f` find file, `g` find word, `r` recent, `s`
   settings, `q` quit
+
+---
+
+## Advanced commands
+
+Everything above is the daily set. What follows completes it: the rest of
+the classic Vim reference card, checked against this editor. `:help`
+followed by any key or command explains it in full.
+
+### More movement
+
+- `M` middle of the window. Vim's `H` and `L` (top, bottom of the window)
+  are taken by airnvim for start and end of line
+- `-` `+` or `Enter` previous, next line, on its first character
+- `gE` end of the previous space-separated word
+- `g0` `gm` `g^` `g$` start, middle, first character, end of the screen
+  line (useful with long wrapped lines)
+- `gj` `gk` down, up one screen line instead of one file line
+- `ngg` line `n`, like `nG`
+
+### Insert and replace
+
+- `gI` insert in the first column, before any indentation
+- `S` change the whole line, like `cc`
+- `gR` replace mode that respects tabs and layout
+- `ga` show the code of the character under the cursor; `g8` its bytes
+
+### Keys in insert mode
+
+With the completion menu open, `^n` `^p` `^y` `^e` `^d` `^u` act on the
+menu; with it closed they do what is listed here.
+
+- `^w` delete the word before the cursor
+- `^u` delete everything typed on this line
+- `^t` `^d` indent, dedent the line by one step
+- `^r` then `a` paste register `a`; `^r` `^r` `a` literally
+- `^a` insert the text typed in the last insert
+- `^@` the same, then leave insert mode
+- `^o` then a command: run one normal-mode command, then back
+- `^v` then a key: insert it literally (`^v` `Tab` a real tab)
+- `^v` `u` and a hex code: a unicode character (`^vu00e8` is è)
+- `^k` and two characters: a digraph (`^k` `e` `:` is ë); `:digraphs` lists
+  them
+- `^x` `^e` `^x` `^y` scroll the window, the cursor stays
+- `^[` same as `Esc`
+
+### Completion in insert mode
+
+- `^x` `^l` whole lines from this file
+- `^x` `^n` `^x` `^p` words from this file
+- `^x` `^i` words from this file and the files it includes
+- `^x` `^f` file names
+- `^x` `^o` smart completion from the language server
+- `^x` `^v` command-line words
+- `^x` `s` spelling suggestions, when spell checking is on
+- `^x` `^]` tags
+
+### Visual mode
+
+- `o` jump to the other end of the selection
+- `gv` select the last selection again
+- `ab` `aB` a block in `( )`, in `{ }`; `ib` `iB` its inside
+- `J` `gJ` join the selected lines, with, without spaces
+- `u` `U` `~` lowercase, uppercase, toggle case
+- `^a` `^x` add, subtract 1 in every selected line; `g^a` counts up
+- `:` then a command: run it on the selected lines (`:'<,'>`)
+
+### Deleting, copying, pasting
+
+- `gJ` join lines without adding a space
+- `:5,10d` delete lines 5 to 10; `:5,10d a` into register `a`
+- `:5,10y` copy lines 5 to 10
+- `]p` `[p` paste after, before, matching the current indentation
+- `gp` `gP` paste, leaving the cursor after the pasted text
+- `"_d` delete without touching the clipboard (the black hole)
+- `"0p` paste the last copy, even after deleting something else
+- `"+y` `"+p` explicit system clipboard (already the default here)
+- `:put a` paste register `a` on a line of its own
+
+### Repeating and counting
+
+- `n.` repeat the last change `n` times
+- `^a` `^x` add, subtract 1 from the number under the cursor
+- `g^g` count words, characters and lines (whole file or selection)
+- `^g` file name and position
+
+### Case
+
+- `g~` with a motion: toggle case (`g~iw` a word)
+- `gu` `gU` with a motion; `guu` `gUU` the whole line
+
+### Search, more
+
+- `/text/e` put the cursor at the end of the match; `/text/+1` on the line
+  after it
+- `/` `Enter` repeat the last search forward; `?` `Enter` backward
+- `g*` `g#` like `*` `#`, matching inside longer words too
+- `gd` `gD` local, global declaration of the word under the cursor; with a
+  language server attached they go to its definition instead
+- `^l` clear the search highlight and redraw the screen
+- `:noh` clear the search highlight only
+- `:set hlsearch!` highlight every match on, off
+
+### Patterns (regular expressions)
+
+In `/` and `:s`. Vim's syntax differs from Perl's: `\v` at the start makes
+it close to Perl, with `()`, `+`, `?`, `{}` and `|` unescaped.
+
+- `.` any character; `\_.` any character, line breaks included
+- `^` `$` start, end of line
+- `\<` `\>` start, end of a word
+- `*` `\+` `\=` zero or more, one or more, zero or one
+- `\{2,4}` two to four times; `\{-}` as few as possible
+- `\|` or: `cat\|dog`
+- `\(` `\)` a group; `\%(` `\)` a group that is not captured
+- `[abc]` `[^abc]` `[a-z]` one of, none of, a range
+- `\d` `\s` `\w` digit, space, word character; capitals negate
+- `\a` `\l` `\u` letter, lowercase, uppercase letter
+- `\c` `\C` ignore, respect case for this search
+- `\zs` `\ze` the match starts, ends here: `foo\zsbar` finds `bar`
+- `\(foo\)\@<=bar` `bar` after `foo`; `foo\(bar\)\@=` `foo` before `bar`;
+  `\@<!` `\@!` the same, negated
+- `\%V` inside the visual selection; `\%^` `\%$` start, end of file
+- `\%23l` on line 23; `\%>5l` after line 5
+- `\n` a line break; `\t` a tab; `\e` escape; `\r` carriage return
+- `\%x41` the character with hex code 41
+- `\i` `\k` `\f` `\p` identifier, keyword, file-name, printable character;
+  the capitals exclude digits
+- `\1` in the pattern: group 1 again (`\(\a\)\1` finds doubled letters)
+- `\&` both sides must match at the same place
+- `\@>` take the group whole, never give part of it back
+- `\_^` `\_$` start, end of line anywhere in the pattern
+- `\_[a-z]` a class that also matches a line break
+- `\%[abc]` optional sequence: `fu\%[nction]` finds fu, fun, func…
+- `\%'a` at the position of mark `a`
+
+### Substitute, more
+
+- `&` in the replacement: the whole match; `\1` `\2` the groups
+- `\u` `\l` next character upper, lower; `\U` `\L` until `\E`
+- `\r` in the replacement: a line break
+- `:s/\n//` join lines (a line break is matched as `\n`)
+- `:%s/x/y/gi` ignore case; `n` only count the matches
+- `:%s//~/` reuse the last replacement too
+- `:5,10s/a/b/g` only on lines 5 to 10
+- `:&&` repeat the last `:s` with its flags
+
+### Global commands
+
+- `:g/pat/d` delete every line matching `pat`
+- `:v/pat/d` or `:g!/pat/d` delete every line not matching it
+- `:g/pat/normal Ax` run normal-mode keys on each matching line
+- `:g/pat/m0` move the matching lines to the top (reversed)
+- `:g/^$/d` delete empty lines
+
+### Line ranges
+
+- `:5` `:$` line 5, the last line; `.` the current line
+- `:5,10` `:.,+3` lines 5 to 10, this line and the next three
+- `:%` the whole file; `:'<,'>` the visual selection
+- `:'a,'b` from mark `a` to mark `b`
+- `:/foo/,/bar/` from the next `foo` to the next `bar`; `?foo?` searches
+  backward
+- `;` instead of `,` sets the cursor on the first line before reading the
+  second
+
+### Moving and copying lines
+
+- `:m +1` `:m -2` move this line down, up; `:m 0` to the top
+- `:t .` duplicate this line; `:5,10t $` copy lines 5-10 to the end
+- `:'<,'>m 20` move the selection after line 20
+
+### Formatting and filtering
+
+- `gqq` `gqap` rewrap the line, the paragraph; `gw` the same, the cursor
+  stays
+- `:center` `:left` `:right` align lines (`:center 75`)
+- `>>` `<<` indent, dedent the line; `5>>` five lines
+- `!` with a motion, then a command: filter text through it (`!ip sort`
+  sorts a paragraph)
+- `!!cmd` filter the current line
+- `:%!sort` `:%!sort -u` sort the file, removing duplicates
+- `:sort` `:sort u` `:sort n` sort lines, unique, numeric
+
+### Marks and jumps
+
+- `ma` set mark `a` in this file; `mA` a mark valid across files
+- `` `a `` go to mark `a`; `'a` to the start of its line
+- ``` `` ``` or `''` back to where the last jump started
+- `` `" `` where the cursor was when the file was last closed
+- `` `[ `` `` `] `` start, end of the last changed or copied text
+- `` `^ `` where insert mode was last left
+- `'0` the position of the last session's last file
+- `:marks` list the marks; `:delmarks a` delete one
+- `:jumps` the jump list; `:changes` the change list
+- `g;` `g,` older, newer change position
+
+### Tags and help links
+
+- `^]` follow the link or tag under the cursor (in `:help` too)
+- `^t` go back
+- `:ts name` pick among matching tags; `:tj name` jump if only one
+- `:tags` the stack of tags jumped through
+
+### Buffers
+
+- `:ls` or `:buffers` list the open buffers
+- `:b 3` or `:b name` switch to buffer 3, to a buffer by name
+- `:badd file` load a file into a buffer without showing it
+- `:bd 3` close buffer 3
+- `:bfirst` `:blast` first, last buffer
+- `:e #` or `^^` the alternate (previous) buffer
+- `:tab ball` every buffer in its own tab
+
+### Windows, more
+
+- `:new` `:vnew` a new empty window, below, beside
+- `:only` keep only this window
+- `^w` `W` previous window
+- `^w` `_` `^w` `|` maximise height, width
+- `^w` `H` `J` `K` `L` move the window to the left, bottom, top, right
+- `^w` `r` rotate the windows; `^w` `x` swap with the next one
+- `^w` `T` move the window to a new tab
+- `zh` `zl` scroll one column left, right (without line wrap)
+- `zH` `zL` half a screen left, right
+
+### Folds, more
+
+Folds follow the syntax tree here (`foldmethod=expr`): `zf` `zd` `zE` only
+work after `:set fdm=manual` or `:set fdm=marker`.
+
+- `zO` `zC` open, close the fold and every fold inside it
+- `zA` toggle it recursively; `zv` open just enough to see the cursor
+- `zm` `zr` fold one level more, less
+- `zj` `zk` move to the next, previous fold
+- `[z` `]z` start, end of the open fold
+- `zn` `zN` `zi` no folds, folds back, toggle folding
+- `zf` with a motion: create a fold; `zd` delete it; `zE` delete all
+- `:5,10fold` fold lines 5 to 10 (manual folds too)
+- `:set fdm=indent` fold by indentation instead
+- `:set foldcolumn=2` show the folds in a side column
+
+### Spelling, more
+
+Turn it on with `␣z` first.
+
+- `zg` add the word to your personal list; `zw` mark it wrong
+- `zug` `zuw` undo either
+- `zG` `zW` the same, for this session only
+- `z=` suggestions; `1z=` the first one
+
+### Files and commands
+
+- `:e` reload the file; `:e!` reload, discarding the changes
+- `:x` save if changed, then quit (like `ZZ`)
+- `:w file` save as; `:5,10w file` save lines 5 to 10 to a file
+- `:5,10w >> file` append them to a file
+- `:r file` insert a file below the cursor
+- `:saveas file` save under a new name and keep editing it
+- `:help holy-grail` every `:` command
+- `:viusage` a summary of every normal-mode command
+- `K` without a language server: the man page of the word
+- Vim's `:hardcopy` does not exist in Neovim: print through the PDF export
+
+### Build and errors
+
+- `:make` run the project's build, collect the errors
+- `:compiler name` choose how errors are read (`:compiler tsc`)
+- `:copen` the list; `:cn` `:cp` next, previous error
+- `:cl` list the errors; `:cf file` read errors from a file
+
+### Terminal
+
+Vim's `:sh` does not exist in Neovim: a terminal runs in a window.
+
+- `:terminal` or `:term` open a shell in a window
+- `i` start typing in it; `^\` `^n` back to normal mode
+- `:split | term` a terminal in a split below
+
+### Options and views
+
+- `:set list` show tabs and trailing spaces
+- `:set cuc` highlight the cursor column
+- `:set nu!` `:set rnu!` line numbers, relative numbers on, off
+- `:set wrap!` line wrap on, off
+- `:set ff=unix` `:set ff=dos` line endings; `:e ++ff=dos` reread
+- `:set option?` show a value; `:set option&` back to the default
+- `:mkview` `:loadview` save, restore folds and cursor of a file
+- `^l` redraw the screen

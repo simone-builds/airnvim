@@ -134,6 +134,11 @@ after `1.`, four after `10.`.
 >
 > > Quotes can nest.
 
+A callout is a quote whose first line is `[!type]`. That line is the
+header: whatever follows the type on it is the **title**, and the body goes
+on the lines below. Keep the header on a line of its own: saving never
+joins the body onto it.
+
 ### Callout with its default title
 
 ```markdown
@@ -141,7 +146,8 @@ after `1.`, four after `10.`.
 > The type in brackets picks icon, colour and title.
 ```
 
-> [!NOTE] The type in brackets picks icon, colour and title.
+> [!NOTE]
+> The type in brackets picks icon, colour and title.
 
 ### Callout with a custom title
 
@@ -150,62 +156,164 @@ after `1.`, four after `10.`.
 > Text after the type replaces the default title.
 ```
 
-> [!TIP] Remember this Text after the type replaces the default title.
+> [!TIP] Remember this
+> Text after the type replaces the default title.
+
+### Title only
+
+```markdown
+> [!WARNING] Backup before updating
+```
+
+> [!WARNING] Backup before updating
+
+### Several paragraphs
+
+A line holding only `>` separates paragraphs inside the callout.
+
+```markdown
+> [!INFO]
+> First paragraph of the body.
+>
+> Second paragraph, still inside the callout.
+```
+
+> [!INFO]
+> First paragraph of the body.
+>
+> Second paragraph, still inside the callout.
+
+### Foldable
+
+A `-` after the type starts it closed, a `+` starts it open; a click on the
+title toggles it in Obsidian. The editor always shows it open.
+
+```markdown
+> [!FAQ]- Why is it closed?
+> The `-` folds it until clicked.
+
+> [!EXAMPLE]+ Open, but foldable
+> The `+` shows it open with a toggle.
+```
+
+> [!FAQ]- Why is it closed?
+> The `-` folds it until clicked.
+
+<!-- -->
+
+> [!EXAMPLE]+ Open, but foldable
+> The `+` shows it open with a toggle.
+
+### Lists, code and formatting inside
+
+Everything works inside a callout as long as each line starts with `>`.
+
+````markdown
+> [!TODO] Before the release
+> Check **these** points:
+>
+> - update the `CHANGELOG`
+> - run the tests
+>
+> ```sh
+> nix flake check
+> ```
+````
+
+> [!TODO] Before the release
+> Check **these** points:
+>
+> - update the `CHANGELOG`
+> - run the tests
+>
+> ```sh
+> nix flake check
+> ```
+
+### Nested callouts
+
+One `>` more per level. The inner header goes on its own line too.
+
+```markdown
+> [!QUESTION] Outer
+> Text of the outer callout.
+>
+> > [!SUCCESS] Inner
+> > Text of the inner callout.
+```
+
+> [!QUESTION] Outer
+> Text of the outer callout.
+>
+> > [!SUCCESS] Inner
+> > Text of the inner callout.
 
 ### Callout types
 
-```markdown
+The type picks icon and colour. In Obsidian the names on one line are
+aliases of the same type; the editor labels each name on its own, and
+GitHub's `IMPORTANT` and `CAUTION` get their own colour. Case does not
+matter (`[!note]` works). An unknown type is a note in Obsidian and a plain
+quote in the editor.
+
+- `[!NOTE]`
+- `[!ABSTRACT]` `[!SUMMARY]` `[!TLDR]`
+- `[!INFO]`
+- `[!TODO]`
+- `[!TIP]` `[!HINT]` `[!IMPORTANT]`
+- `[!SUCCESS]` `[!CHECK]` `[!DONE]`
+- `[!QUESTION]` `[!HELP]` `[!FAQ]`
+- `[!WARNING]` `[!CAUTION]` `[!ATTENTION]`
+- `[!FAILURE]` `[!FAIL]` `[!MISSING]`
+- `[!DANGER]` `[!ERROR]`
+- `[!BUG]`
+- `[!EXAMPLE]`
+- `[!QUOTE]` `[!CITE]`
+
+> [!ABSTRACT]
+> A summary.
+
+<!-- -->
+
 > [!IMPORTANT]
-> [!WARNING]
-> [!CAUTION]
-> [!INFO]
-> [!TODO]
+> Key information.
+
+<!-- -->
+
 > [!SUCCESS]
-> [!QUESTION]
+> It worked.
+
+<!-- -->
+
+> [!WARNING]
+> Needs attention.
+
+<!-- -->
+
 > [!FAILURE]
+> It did not work.
+
+<!-- -->
+
+> [!DANGER]
+> Risky: think twice.
+
+<!-- -->
+
 > [!BUG]
-> [!EXAMPLE]
+> A known problem.
+
+<!-- -->
+
 > [!QUOTE]
-```
+> Someone else's words.
 
-> [!IMPORTANT] Key information.
+### Where callouts show
 
-> [!WARNING] Needs attention.
-
-> [!CAUTION] Risky: think twice.
-
-> [!INFO] Background information.
-
-<!-- -->
-
-> [!TODO] Something left to do.
-
-<!-- -->
-
-> [!SUCCESS] It worked.
-
-<!-- -->
-
-> [!QUESTION] An open question.
-
-<!-- -->
-
-> [!FAILURE] It did not work.
-
-<!-- -->
-
-> [!BUG] A known problem.
-
-<!-- -->
-
-> [!EXAMPLE] A worked example.
-
-<!-- -->
-
-> [!QUOTE] Someone else's words.
-
-Obsidian folds a callout when the type ends in `-` (closed) or `+` (open):
-`> [!NOTE]-`. The browser preview shows every callout as a plain quote.
+- Obsidian and the editor draw them as boxes with icon and colour
+- `:PreviewMd` in the browser shows a plain quote
+- the PDF export (pandoc) has no callouts either: it prints a plain quote
+  with the `[!type]` line as text
 
 ---
 
@@ -399,7 +507,7 @@ reads the title and date from it.
 - `:MdWrap` rewraps the paragraphs; saving does it too
 - `:MdFormatDir` formats every `.md` in the file's directory at once
 - `#word` is a tag and is never touched, even at the start of a line;
-  `##Title` without its space becomes `## Title` on save. A level-1
-  heading needs its space typed: `#Title` stays a tag
+  `##Title` without its space becomes `## Title` on save. A level-1 heading
+  needs its space typed: `#Title` stays a tag
 - `:SpellToggle` or `␣z` checks spelling in this buffer
 - `:NvCheat` opens the Neovim cheatsheet
