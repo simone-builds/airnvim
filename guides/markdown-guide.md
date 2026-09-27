@@ -1,7 +1,7 @@
 # Markdown Guide
 
 Every section shows the **source** in a code block, then the same thing
-**rendered**. Reopen this page with `:mdguide`, close it with `q`.
+**rendered**. Reopen this page with `:MdGuide`, close it with `q`.
 
 ---
 
@@ -291,7 +291,7 @@ its paragraph, pandoc turns that text into the figure caption.
 the PDF (typst) and changes nothing in the editor. The last two are
 Obsidian embeds; `|400` sets the width in pixels.
 
-In airnvim, copy an image and press `␣ip` or run `:pasteimage`: it asks for
+In airnvim, copy an image and press `␣ip` or run `:PasteImage`: it asks for
 a name, saves `assets/YYYY-MM-DD_HH-MM-SS_name.png` next to the file and
 writes the link for you, with `{ width=15cm }` already added.
 
@@ -394,8 +394,8 @@ reads the title and date from it.
 
 ## Writing in airnvim
 
-- `:previewmd` opens a live preview in the browser, `:previewmd stop`
+- `:PreviewMd` opens a live preview in the browser, `:PreviewMd stop`
   closes it
-- `:mdwrap` rewraps the paragraphs; saving does it too
-- `:spelltoggle` or `␣z` checks spelling in this buffer
-- `:nvcheat` opens the Neovim cheatsheet
+- `:MdWrap` rewraps the paragraphs; saving does it too
+- `:SpellToggle` or `␣z` checks spelling in this buffer
+- `:NvCheat` opens the Neovim cheatsheet

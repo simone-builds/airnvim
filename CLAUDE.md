@@ -74,9 +74,8 @@ lua/core/
   keymaps.lua         # global maps (H, L)
   autocmds.lua        # filetype, indentation
   mdwrap.lua          # markdown text wrapping, :MdWrap
-  mdlink.lua          # follow links (<CR>, Ctrl+click), insert (\il)
+  mdlink.lua          # follow links (<CR>, Ctrl+click), insert (␣il)
   spell.lua           # opt-in spell checking, :SpellToggle
-  cmdalias.lua        # lowercase aliases for user commands
   rumdl.lua           # path to the generated rumdl rules file
   paths.lua           # resolves the real config directory
   palette.lua         # desktop colours, Material names -> ours
@@ -527,16 +526,12 @@ so other filetypes are left alone.
 
 - Off everywhere by default. `:SpellToggle` / `<leader>z` enables it for
   the current buffer and session only; nothing is persisted.
-- `:spelltoggle` and `:spellToggle` work too. User commands **must** start
-  with a capital (`E183`), so the lowercase forms are `cnoreabbrev`
-  entries made by `core/cmdalias.lua`, not commands. The same helper
-  gives `:mdguide`, `:nvcheat`, `:previewmd`, `:pasteimage` and
-  `:mdwrap`. They are guarded with
-  `getcmdline() ==#` so they only fire when the word is the whole command
-  line: an unguarded abbreviation would also rewrite the word inside
-  `:s//` patterns and command arguments. Cmdline completion stays
-  case-sensitive, so `:spell<Tab>` still offers only the builtins —
-  the aliases work when typed in full.
+- User commands **must** start with a capital (`E183`) and exist only in
+  that form. Lowercase aliases (`:spelltoggle`, `:mdguide`, ...) used to
+  be `cnoreabbrev` entries from a `core/cmdalias.lua`; they were removed
+  on purpose. Cmdline completion is case-sensitive and never lists
+  abbreviations, so `:md<Tab>` offered nothing and the aliases only
+  worked typed in full. Do not bring them back; `:Md<Tab>` is the way.
 - Several dictionaries apply at once (`spelllang = it,en`): a word passes
   if any of them contains it.
 - Code exclusion needs both halves. Neovim's core queries provide

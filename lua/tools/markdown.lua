@@ -2,10 +2,9 @@
 --------------------------------------------------
 -- `:PreviewMd` drives live-preview.nvim, `:PasteImage` and
 -- <leader>ip drive img-clip.nvim. Both plugins load on first
--- use; only the commands and aliases are registered here.
+-- use; only the commands are registered here.
 
 local M = {}
-local alias = require("core.cmdalias").set
 
 -- BROWSER PREVIEW
 --------------------------------------------------
@@ -21,8 +20,6 @@ end, {
 	end,
 	desc = "Live markdown preview in the browser",
 })
-
-alias("previewmd", "PreviewMd")
 
 -- IMAGE PASTE
 --------------------------------------------------
@@ -116,7 +113,5 @@ function M.paste_image()
 		})
 	end)
 end
-
-alias("pasteimage", "PasteImage")
 
 return M

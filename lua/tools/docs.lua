@@ -5,8 +5,6 @@
 -- with the config in the Nix store, so they are found
 -- through core.paths and never through stdpath("config").
 
-local alias = require("core.cmdalias").set
-
 local function open(file)
 	local path = vim.fs.joinpath(require("core.paths").config(), "guides", file)
 	if vim.fn.filereadable(path) == 0 then
@@ -41,6 +39,3 @@ end, { desc = "Open the markdown syntax guide" })
 vim.api.nvim_create_user_command("NvCheat", function()
 	open("nvim-cheatsheet.md")
 end, { desc = "Open the Neovim cheatsheet" })
-
-alias("mdguide", "MdGuide")
-alias("nvcheat", "NvCheat")

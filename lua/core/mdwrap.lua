@@ -289,8 +289,6 @@ vim.api.nvim_create_user_command("MdWrap", function()
 	M.wrap(0)
 end, { desc = "Reflow markdown prose to textwidth" })
 
-require("core.cmdalias").set("mdwrap", "MdWrap")
-
 -- AUTOCOMMANDS
 --------------------------------------------------
 vim.api.nvim_create_autocmd("FileType", {

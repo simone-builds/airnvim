@@ -63,11 +63,6 @@ vim.api.nvim_create_user_command("SpellToggle", function()
 	M.toggle(0)
 end, { desc = "Toggle spell checking for this buffer" })
 
--- Lowercase aliases, see core/cmdalias.lua
-local alias = require("core.cmdalias").set
-alias("spelltoggle", "SpellToggle")
-alias("spellToggle", "SpellToggle")
-
 vim.keymap.set("n", "<leader>z", M.toggle, { desc = "Toggle spell checking" })
 
 return M

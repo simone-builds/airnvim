@@ -1,8 +1,8 @@
 # Neovim Cheatsheet
 
 Daily keys for Neovim and for what airnvim adds on top. Reopen this page
-with `:nvcheat`, close it with `q`. The markdown syntax guide is
-`:mdguide`.
+with `:NvCheat`, close it with `q`. The markdown syntax guide is
+`:MdGuide`.
 
 ---
 
@@ -16,6 +16,9 @@ with `:nvcheat`, close it with `q`. The markdown syntax guide is
 - `m` stands for any motion, `c` for any character
 - capital letters mean `Shift`: `G` is `Shift-g`
 - `:` commands end with `Enter`
+- airnvim's own commands start with a capital, and `Tab` completes them
+  only from one: `:Md` then `Tab` lists `:MdGuide` and `:MdWrap`, while
+  `:md` finds nothing. The full list is under airnvim commands below
 
 ---
 
@@ -175,7 +178,7 @@ They go through the clipboard: afterwards it holds the selected words.
 
 ### Images
 
-- `␣ip` or `:pasteimage` paste the image in the clipboard: a popup asks for
+- `␣ip` or `:PasteImage` paste the image in the clipboard: a popup asks for
   a name, the file is saved as `assets/YYYY-MM-DD_HH-MM-SS_name.png` next
   to the note, and the link is written for you. An empty name keeps the
   date only
@@ -186,9 +189,9 @@ They go through the clipboard: afterwards it holds the selected words.
 
 ### Preview and layout
 
-- `:previewmd` live preview in the browser, follows the cursor
-- `:previewmd stop` end the preview
-- `:mdwrap` rewrap every paragraph; saving does it too
+- `:PreviewMd` live preview in the browser, follows the cursor
+- `:PreviewMd stop` end the preview
+- `:MdWrap` rewrap every paragraph; saving does it too
 - `:RenderMarkdown toggle` show the raw text instead of the rendering
 
 ### Headings and folds
@@ -208,7 +211,7 @@ They go through the clipboard: afterwards it holds the selected words.
 
 ### Spelling
 
-- `␣z` or `:spelltoggle` spell checking on, off (this buffer only)
+- `␣z` or `:SpellToggle` spell checking on, off (this buffer only)
 - Italian and English are checked together: a word passes if either
   dictionary has it. Markdown files only; code is skipped
 - it checks spelling, not grammar
@@ -422,13 +425,27 @@ Available when `settings.ai.enable` is on.
 
 ---
 
+## airnvim commands
+
+Type the capital: `:Md` then `Tab` completes, `:md` does not. `␣sc`
+searches every command, these included.
+
+- `:NvCheat` this cheatsheet
+- `:MdGuide` the markdown syntax guide
+- `:SpellToggle` spell checking on, off; `␣z` does the same
+- `:MdWrap` rewrap every paragraph of a markdown file
+- `:PreviewMd` browser preview; `:PreviewMd stop` ends it
+- `:PasteImage` paste the clipboard image; `␣ip` does the same
+- `:LzeStatus` installed plugins and whether they are loaded
+- `:LzeNix` plugins provided by Nix
+
+---
+
 ## Miscellaneous
 
 - `:!cmd` run a shell command; `:r !cmd` insert its output
 - `␣z` spell checking, see Markdown above
 - `:help topic` or `␣sh` the manual
 - `:checkhealth` diagnose problems
-- `:LzeStatus` installed plugins and whether they are loaded
-- `:LzeNix` plugins provided by Nix
 - start screen: `n` new file, `f` find file, `g` find word, `r` recent, `s`
   settings, `q` quit
