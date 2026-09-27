@@ -3,6 +3,10 @@
 -- A plugin's own maps live in its spec; filetype-local ones
 -- live in core/autocmds.lua.
 
+-- Space is the leader: a lone press or an unknown chord
+-- would otherwise fall through to its native `l`.
+vim.keymap.set({ "n", "x" }, "<Space>", "<Nop>")
+
 -- Line navigation: H to the start, L to the end.
 -- Works in operator pending too (dL, yH).
 vim.keymap.set({ "n", "x", "o" }, "H", "^", { desc = "Go to start of line" })

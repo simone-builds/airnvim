@@ -237,7 +237,7 @@ Obsidian folds a callout when the type ends in `-` (closed) or `+` (open):
 Paths are relative to the file that contains the link. A heading anchor is
 its text in lowercase, with spaces turned into dashes.
 
-In airnvim, `Enter` or `Ctrl`+click follows a link, and `\il` writes one
+In airnvim, `Enter` or `Ctrl`+click follows a link, and `␣il` writes one
 for you: pick the note from a list and the path is filled in.
 
 ### Wikilinks (Obsidian)
@@ -291,7 +291,7 @@ its paragraph, pandoc turns that text into the figure caption.
 the PDF (typst) and changes nothing in the editor. The last two are
 Obsidian embeds; `|400` sets the width in pixels.
 
-In airnvim, copy an image and press `\ip` or run `:pasteimage`: it asks for
+In airnvim, copy an image and press `␣ip` or run `:pasteimage`: it asks for
 a name, saves `assets/YYYY-MM-DD_HH-MM-SS_name.png` next to the file and
 writes the link for you, with `{ width=15cm }` already added.
 
@@ -397,5 +397,5 @@ reads the title and date from it.
 - `:previewmd` opens a live preview in the browser, `:previewmd stop`
   closes it
 - `:mdwrap` rewraps the paragraphs; saving does it too
-- `:spelltoggle` or `\z` checks spelling in this buffer
+- `:spelltoggle` or `␣z` checks spelling in this buffer
 - `:nvcheat` opens the Neovim cheatsheet

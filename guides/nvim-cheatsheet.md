@@ -9,9 +9,9 @@ with `:nvcheat`, close it with `q`. The markdown syntax guide is
 ## How to read this sheet
 
 - `^x` means hold `Ctrl` and press `x`
-- `\` is the **leader key**. `\sf` means: press `\`, release it, then `s`,
-  then `f`, one after the other. Plugins and the Neovim docs write it as
-  `<leader>sf`; the local leader is `\` as well
+- `␣` is the space bar, the **leader key**. `␣sf` means: press `Space`,
+  release it, then `s`, then `f`, one after the other. Plugins and the
+  Neovim docs write it as `<leader>sf`; the local leader is `\`
 - a number in front repeats a command: `5j` moves five lines down
 - `m` stands for any motion, `c` for any character
 - capital letters mean `Shift`: `G` is `Shift-g`
@@ -120,7 +120,7 @@ copies a word.
 - `u` undo
 - `^r` redo
 - `U` undo every change on the last changed line
-- `\u` undo tree: every past state, even undone branches
+- `␣u` undo tree: every past state, even undone branches
 
 ### Copy and paste
 
@@ -175,7 +175,7 @@ They go through the clipboard: afterwards it holds the selected words.
 
 ### Images
 
-- `\ip` or `:pasteimage` paste the image in the clipboard: a popup asks for
+- `␣ip` or `:pasteimage` paste the image in the clipboard: a popup asks for
   a name, the file is saved as `assets/YYYY-MM-DD_HH-MM-SS_name.png` next
   to the note, and the link is written for you. An empty name keeps the
   date only
@@ -194,7 +194,7 @@ They go through the clipboard: afterwards it holds the selected words.
 ### Headings and folds
 
 - `]]` `[[` next, previous heading
-- `\t` or `gO` table of contents: every heading, indented by level;
+- `␣t` or `gO` table of contents: every heading, indented by level;
   `Enter` jumps to it, `:q` closes the list
 - headings show as 1, 1.1, 1.1.1: the numbers are drawn, not written in
   the file, so a PDF export does not number them twice
@@ -208,9 +208,13 @@ They go through the clipboard: afterwards it holds the selected words.
 
 ### Spelling
 
-- `\z` or `:spelltoggle` spell checking on, off (this buffer only)
+- `␣z` or `:spelltoggle` spell checking on, off (this buffer only)
+- Italian and English are checked together: a word passes if either
+  dictionary has it. Markdown files only; code is skipped
+- it checks spelling, not grammar
 - `]s` `[s` next, previous misspelled word
 - `z=` suggestions for the word under the cursor
+- `1z=` take the first suggestion straight away
 - `zG` accept a word for this session
 
 ### Links
@@ -220,9 +224,9 @@ They go through the clipboard: afterwards it holds the selected words.
   to their program. `^o` comes back
 - a link to a note that does not exist asks to create it, next to the
   note holding the link
-- `\il` insert a link: pick a note, `[](path.md)` is written with the
+- `␣il` insert a link: pick a note, `[](path.md)` is written with the
   cursor between the brackets for the text (`Esc` leaves it empty)
-- `\il` on a selection: the selected words become the link text
+- `␣il` on a selection: the selected words become the link text
 - `gx` open the link with the system program instead
 - `gf` open the file whose name is under the cursor
 
@@ -235,24 +239,24 @@ They go through the clipboard: afterwards it holds the selected words.
 - `/text` `?text` search forward, backward
 - `n` `N` next, previous match
 - `*` `#` search the word under the cursor forward, backward
-- `\/` fuzzy search in the file, with a list of matches
+- `␣/` fuzzy search in the file, with a list of matches
 
 ### In the project
 
 Search starts from the directory Neovim was opened in (`:pwd`).
 
-- `\sf` find a file by name
-- `\sg` search text in every file (live grep)
-- `\sw` search the word under the cursor
-- `\s.` recent files
-- `\sb` or `\\` open buffers
-- `\sh` help pages
-- `\sk` keymaps
-- `\sc` commands
-- `\sd` diagnostics
-- `\sr` reopen the last search
-- `\sn` airnvim's own config files
-- `\ss` every search picker
+- `␣sf` find a file by name
+- `␣sg` search text in every file (live grep)
+- `␣sw` search the word under the cursor
+- `␣s.` recent files
+- `␣sb` or `␣␣` open buffers
+- `␣sh` help pages
+- `␣sk` keymaps
+- `␣sc` commands
+- `␣sd` diagnostics
+- `␣sr` reopen the last search
+- `␣sn` airnvim's own config files
+- `␣ss` every search picker
 
 ### Inside a search window
 
@@ -281,18 +285,18 @@ Search starts from the directory Neovim was opened in (`:pwd`).
 
 Spectre searches the current directory and all its subdirectories.
 
-- `\S` open Spectre: type the search, `Tab` to the replace field
-- `\sR` start from the word under the cursor, or the selection
-- `\sF` limit it to the current file
+- `␣S` open Spectre: type the search, `Tab` to the replace field
+- `␣sR` start from the word under the cursor, or the selection
+- `␣sF` limit it to the current file
 - `dd` in the results: leave that match out
-- `\rc` replace only the match under the cursor
-- `\R` replace everything listed
+- `␣rc` replace only the match under the cursor
+- `␣R` replace everything listed
 - `ti` `th` toggle ignore case, hidden files
 - `Enter` open the file at that match
 
 ### With the quickfix list
 
-- `\sg`, type the search, then `^q` to collect the matches
+- `␣sg`, type the search, then `^q` to collect the matches
 - `:cfdo %s/old/new/gc | update` replace in every collected file
 - `:cdo s/old/new/g | update` replace on the collected lines only
 - `:copen` `:cclose` show, hide the list
@@ -370,11 +374,11 @@ These work when a language server is attached (Nix, Lua, Markdown).
 - `gI` go to the implementation
 - `K` documentation of the word under the cursor
 - `^k` signature help
-- `\D` type definition
-- `\ds` `\ws` symbols in the file, in the workspace
-- `\rn` rename everywhere
-- `\ca` code actions, with a preview
-- `\e` show the diagnostic under the cursor
+- `␣D` type definition
+- `␣ds` `␣ws` symbols in the file, in the workspace
+- `␣rn` rename everywhere
+- `␣ca` code actions, with a preview
+- `␣e` show the diagnostic under the cursor
 - `]d` `[d` next, previous diagnostic
 - `:Format` format the file; saving formats too
 
@@ -382,12 +386,12 @@ These work when a language server is attached (Nix, Lua, Markdown).
 
 ## Git
 
-- `\gg` LazyGit
-- `\gd` open the diff view; `\gq` close it
-- `\gh` history of the current file
-- `\gc` commits
-- `\gs` changed files
-- `\gb` branches
+- `␣gg` LazyGit
+- `␣gd` open the diff view; `␣gq` close it
+- `␣gh` history of the current file
+- `␣gc` commits
+- `␣gs` changed files
+- `␣gb` branches
 
 ---
 
@@ -395,16 +399,16 @@ These work when a language server is attached (Nix, Lua, Markdown).
 
 Available when a vault is set in Nix.
 
-- `\oo` open a note; `\os` search the notes
-- `\on` new note; `\ot` insert a template
-- `\ob` backlinks; `\ol` links in this note; `\otg` tags
-- `\od` daily notes; `\odtd` `\ody` `\odtm` today, yesterday, tomorrow
-- `\orn` rename the note and fix its links
-- `\opi` paste an image into the vault
-- `\og` open in the Obsidian app; `\ow` switch vault
+- `␣oo` open a note; `␣os` search the notes
+- `␣on` new note; `␣ot` insert a template
+- `␣ob` backlinks; `␣ol` links in this note; `␣otg` tags
+- `␣od` daily notes; `␣odtd` `␣ody` `␣odtm` today, yesterday, tomorrow
+- `␣orn` rename the note and fix its links
+- `␣opi` paste an image into the vault
+- `␣og` open in the Obsidian app; `␣ow` switch vault
 - `gf` follow the link under the cursor
-- `\ol` in visual mode: link the selection to a note
-- `\onl` in visual mode: new note from the selection
+- `␣ol` in visual mode: link the selection to a note
+- `␣onl` in visual mode: new note from the selection
 
 ---
 
@@ -412,7 +416,7 @@ Available when a vault is set in Nix.
 
 Available when `settings.ai.enable` is on.
 
-- `\a` open, close the chat
+- `␣a` open, close the chat
 - `^s` actions menu
 - `ga` in visual mode: add the selection to the chat
 
@@ -421,8 +425,8 @@ Available when `settings.ai.enable` is on.
 ## Miscellaneous
 
 - `:!cmd` run a shell command; `:r !cmd` insert its output
-- `\z` spell checking, see Markdown above
-- `:help topic` or `\sh` the manual
+- `␣z` spell checking, see Markdown above
+- `:help topic` or `␣sh` the manual
 - `:checkhealth` diagnose problems
 - `:LzeStatus` installed plugins and whether they are loaded
 - `:LzeNix` plugins provided by Nix

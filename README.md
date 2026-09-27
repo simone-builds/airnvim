@@ -375,7 +375,7 @@ The default is `copilot`. No credential is stored in this repository.
 
 ## Keybindings
 
-`<leader>` and `<localleader>` are both `\` (backslash).
+`<leader>` is `Space`; `<localleader>` is `\` (backslash).
 
 | Key         | Mode    | Action                        |
 | ----------- | ------- | ----------------------------- |

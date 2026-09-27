@@ -70,7 +70,7 @@ selene.toml           # lua lint; the "vim" std lives in vim.toml
 vim.toml              # selene standard library for neovim
 
 lua/core/
-  options.lua         # vim.opt and vim.g. leader = '\'
+  options.lua         # vim.opt and vim.g. leader = Space
   keymaps.lua         # global maps (H, L)
   autocmds.lua        # filetype, indentation
   mdwrap.lua          # markdown text wrapping, :MdWrap
@@ -209,7 +209,11 @@ specs, and the final `runtimePkgs` is the concatenation of all of them via
 
 ## Keybindings
 
-`mapleader` and `maplocalleader` are both **`\`**.
+`mapleader` is **Space**, `maplocalleader` is **`\`** (nothing uses it
+yet; it stays free for filetype plugins). `core/keymaps.lua` maps a lone
+`<Space>` to `<Nop>` in n and x, so an unknown leader chord does not fall
+through to the native `l`. Keep every `<leader>` map out of insert and
+terminal mode: there it would delay every typed space.
 
 ### Core global maps
 
@@ -233,7 +237,8 @@ slug. A missing `.md` asks to be created (default No) and is written at
 once, so the link is never left dangling. `<CR>` off a link falls back
 to itself. Ctrl+click replays `<LeftMouse>` before following:
 `getmousepos().column` ignores concealed text, and past the first link
-it picked the wrong one. `\il` searches from the cwd like `\sf`, or from
+it picked the wrong one. `<leader>il` searches from the cwd like
+`<leader>sf`, or from
 the note's directory when the note lies outside it, and writes paths
 relative to the note, with `../` where needed.
 

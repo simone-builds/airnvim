@@ -3,7 +3,9 @@
 local set = vim.opt
 
 -- Leader --
-vim.g.mapleader = "\\"
+-- Space leads; `\` stays free as the local leader for
+-- filetype plugins. Set before any map is defined.
+vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
 -- Run project-local `.nvim.lua` files
