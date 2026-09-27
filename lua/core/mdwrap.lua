@@ -66,6 +66,68 @@ local function in_code_block()
 	return false
 end
 
+-- STANDALONE IMAGES
+--------------------------------------------------
+-- A line holding nothing but an image. Text on the line next
+-- to it belongs to the same paragraph: the reflow pulls it onto
+-- the image line, and pandoc only makes a figure, with the alt
+-- text as caption, of an image alone in its paragraph. Such a
+-- line therefore gets a blank line on both sides.
+-- Pandoc attributes may follow: `![](x.png){ width=15cm }`.
+local function is_image_line(line)
+	return line:match("^!%[.-%]%(.-%)%s*$") ~= nil
+		or line:match("^!%[.-%]%(.-%)%b{}%s*$") ~= nil
+		or line:match("^!%[%[.-%]%]%s*$") ~= nil
+end
+
+-- Copy of `lines` with the blanks added. Fenced code is left
+-- alone, so image syntax shown as an example stays as it is.
+-- A fence closes on the same character, at least as long.
+local function space_images(lines)
+	local out, fence = {}, nil
+	for i, line in ipairs(lines) do
+		local mark = line:match("^%s*(```+)") or line:match("^%s*(~~~+)")
+		if fence then
+			if mark and mark:sub(1, 1) == fence:sub(1, 1) and #mark >= #fence and line:match("^%s*[`~]+%s*$") then
+				fence = nil
+			end
+		elseif mark then
+			fence = mark
+		end
+
+		local image = not fence and not mark and is_image_line(line)
+		if image and #out > 0 and out[#out]:match("%S") then
+			table.insert(out, "")
+		end
+		table.insert(out, line)
+		if image and lines[i + 1] and lines[i + 1]:match("%S") then
+			table.insert(out, "")
+		end
+	end
+	return out
+end
+
+-- WRITING BACK
+--------------------------------------------------
+-- Only the hunks that changed are written. Replacing the whole
+-- buffer collapsed every extmark in it, image.nvim's included:
+-- the space kept under an image vanished, text was drawn over
+-- the picture, and the render on save aimed at a line that no
+-- longer existed (E966). Bottom-up, so earlier hunks keep their
+-- line numbers. All of it is still a single undo step.
+local diff = (vim.text and vim.text.diff) or vim.diff
+
+local function apply(bufnr, old, new)
+	local hunks = diff(table.concat(old, "\n") .. "\n", table.concat(new, "\n") .. "\n", { result_type = "indices" })
+	for i = #hunks, 1, -1 do
+		local a_start, a_count, b_start, b_count = unpack(hunks[i])
+		local replacement = vim.list_slice(new, b_start, b_start + b_count - 1)
+		-- An insertion reports the line it goes after
+		local first = a_count == 0 and a_start or a_start - 1
+		vim.api.nvim_buf_set_lines(bufnr, first, first + a_count, false, replacement)
+	end
+end
+
 -- REFLOWING EXISTING TEXT
 --------------------------------------------------
 
@@ -98,7 +160,10 @@ local function collect(node, out, lines)
 				if ecol == 0 then
 					erow = erow - 1
 				end
-				if erow >= srow then
+				-- A lone image has nothing to wrap, and `gq` would
+				-- break a long alt text across lines
+				local lone_image = erow == srow and is_image_line(lines[srow + 1])
+				if erow >= srow and not lone_image then
 					segments(out, lines, srow + 1, erow + 1)
 				end
 			else
@@ -118,7 +183,12 @@ function M.wrap(bufnr)
 		return
 	end
 
-	local ok, parser = pcall(vim.treesitter.get_parser, bufnr, "markdown")
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local spaced = space_images(lines)
+
+	-- The spaced text is parsed as a string: it is not in the
+	-- buffer yet, and the result is written back in one go
+	local ok, parser = pcall(vim.treesitter.get_string_parser, table.concat(spaced, "\n"), "markdown")
 	if not ok or not parser then
 		return
 	end
@@ -127,11 +197,9 @@ function M.wrap(bufnr)
 		return
 	end
 
-	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-
 	local ranges = {}
-	collect(tree:root(), ranges, lines)
-	if #ranges == 0 then
+	collect(tree:root(), ranges, spaced)
+	if #ranges == 0 and #spaced == #lines then
 		return
 	end
 
@@ -148,7 +216,7 @@ function M.wrap(bufnr)
 	-- and ~3.4s, against ~0.1s here. It also collapses the
 	-- reflow into one undo step instead of one per paragraph.
 	local scratch = vim.api.nvim_create_buf(false, true)
-	vim.api.nvim_buf_set_lines(scratch, 0, -1, false, lines)
+	vim.api.nvim_buf_set_lines(scratch, 0, -1, false, spaced)
 
 	-- Copy the options `gq` reads. Setting `filetype` instead
 	-- would fire FileType and attach Treesitter all over again.
@@ -208,7 +276,7 @@ function M.wrap(bufnr)
 	local win = vim.fn.bufwinid(bufnr)
 	local view = win ~= -1 and vim.api.nvim_win_call(win, vim.fn.winsaveview) or nil
 
-	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, wrapped)
+	apply(bufnr, lines, wrapped)
 
 	if view then
 		vim.api.nvim_win_call(win, function()
@@ -220,6 +288,8 @@ end
 vim.api.nvim_create_user_command("MdWrap", function()
 	M.wrap(0)
 end, { desc = "Reflow markdown prose to textwidth" })
+
+require("core.cmdalias").set("mdwrap", "MdWrap")
 
 -- AUTOCOMMANDS
 --------------------------------------------------

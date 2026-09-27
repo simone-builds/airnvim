@@ -7,3 +7,5 @@
 
 require("tools.open")
 require("tools.lze")
+require("tools.docs")
+require("tools.markdown")

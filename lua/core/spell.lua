@@ -63,24 +63,10 @@ vim.api.nvim_create_user_command("SpellToggle", function()
 	M.toggle(0)
 end, { desc = "Toggle spell checking for this buffer" })
 
--- Lowercase aliases --
--- User commands must start with a capital, so `:spelltoggle`
--- cannot be defined as one. A cmdline abbreviation rewrites it
--- instead. The guard matters: without it the word would expand
--- anywhere on the command line, including inside `:s//` patterns
--- and command arguments.
-local function alias(lhs)
-	vim.cmd(
-		("cnoreabbrev <expr> %s (getcmdtype() ==# ':' && getcmdline() ==# %q) ? 'SpellToggle' : %q"):format(
-			lhs,
-			lhs,
-			lhs
-		)
-	)
-end
-
-alias("spelltoggle")
-alias("spellToggle")
+-- Lowercase aliases, see core/cmdalias.lua
+local alias = require("core.cmdalias").set
+alias("spelltoggle", "SpellToggle")
+alias("spellToggle", "SpellToggle")
 
 vim.keymap.set("n", "<leader>z", M.toggle, { desc = "Toggle spell checking" })
 

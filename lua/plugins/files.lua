@@ -1,6 +1,38 @@
 -- FILE MANAGER AND SEARCH
 --------------------------------------------------
 
+-- Oil preview: text files only --
+-- The preview reads a file as text. An image, a PDF or an
+-- archive has few or no newlines, so "the first screenful of
+-- lines" is most of the file: slow for a large one, and
+-- garbage on screen anyway. Known binary extensions are
+-- refused outright; anything else is sniffed for a NUL byte
+-- in its first 8 KB, the test git and grep use.
+local BINARY = {}
+for ext in
+	([[png jpg jpeg gif webp avif bmp ico tif tiff heic psd xcf
+	pdf epub djvu mp3 flac ogg opus wav m4a aac mp4 mkv webm mov
+	avi zip gz tgz xz zst bz2 tar 7z rar iso dmg deb rpm ttf otf
+	woff woff2 so o a exe dll bin class jar pyc wasm sqlite db
+	doc docx xls xlsx ppt pptx odt ods odp]]):gmatch("%S+")
+do
+	BINARY[ext] = true
+end
+
+local function not_text(path)
+	local ext = path:match("%.(%w+)$")
+	if ext and BINARY[ext:lower()] then
+		return true
+	end
+	local file = io.open(path, "rb")
+	if not file then
+		return false
+	end
+	local head = file:read(8192) or ""
+	file:close()
+	return head:find("\0", 1, true) ~= nil
+end
+
 return {
 	-- Oil: the filesystem as an editable buffer --
 	{
@@ -13,7 +45,16 @@ return {
 		lazy = false,
 
 		keys = {
-			{ "-", "<cmd>lua require('oil').open_float()<CR>", desc = "Open Oil float" },
+			{
+				"-",
+				function()
+					-- `settings.oil.preview` opens the preview with
+					-- the list; otherwise `^p` toggles it
+					local preview = require("core.setting").bool(false, "settings", "oil", "preview")
+					require("oil").open_float(nil, preview and { preview = {} } or nil)
+				end,
+				desc = "Open Oil float",
+			},
 		},
 
 		after = function()
@@ -93,11 +134,24 @@ return {
 				},
 				float = {
 					border = "rounded",
-					max_width = 0.6,
+					-- `settings.oil.width`, a percentage: wide enough
+					-- to share with the preview (`^p`), which opens
+					-- on the right of the list
+					max_width = nixInfo(75, "settings", "oil", "width") / 100,
 					max_height = 0.6,
+					preview_split = "right",
 					override = function(conf)
 						return conf
 					end,
+				},
+				-- `fast_scratch` reads only the first screenful of
+				-- lines, highlighted by treesitter with no LSP or
+				-- plugin attached: a long file costs what a short
+				-- one does, and the wheel scrolls that much of it
+				preview_win = {
+					update_on_cursor_moved = true,
+					preview_method = "fast_scratch",
+					disable_preview = not_text,
 				},
 				preview = {
 					max_width = 0.9,
@@ -110,7 +164,6 @@ return {
 					win_options = {
 						winblend = 0,
 					},
-					update_on_cursor_moved = true,
 				},
 				progress = {
 					max_width = 0.9,
@@ -131,6 +184,23 @@ return {
 				keymaps_help = {
 					border = "rounded",
 				},
+			})
+
+			-- Mouse wheel in the preview --
+			-- Oil opens its preview as a non-focusable float, so
+			-- mouse events fall through to the window behind it.
+			-- The float is made once and every previewed file is
+			-- loaded into it from inside, which is when this fires;
+			-- `mouse` lets the wheel scroll it while the cursor
+			-- stays in the list.
+			vim.api.nvim_create_autocmd("BufWinEnter", {
+				group = vim.api.nvim_create_augroup("OilPreviewMouse", { clear = true }),
+				callback = function()
+					local win = vim.api.nvim_get_current_win()
+					if vim.w[win].oil_preview then
+						vim.api.nvim_win_set_config(win, { mouse = true })
+					end
+				end,
 			})
 		end,
 	},

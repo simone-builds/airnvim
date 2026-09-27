@@ -52,6 +52,22 @@ return {
 
 			setup()
 
+			-- No statusline in floating windows. Since 0.12 a float
+			-- shows one when its local 'statusline' is set, and
+			-- lualine sets it on every window it refreshes: Oil's
+			-- preview grew a `[No Name]` bar and stood one row
+			-- taller than the list beside it. A nil result leaves
+			-- the float with the empty statusline `style=minimal`
+			-- gave it.
+			local lualine = require("lualine")
+			local draw = lualine.statusline
+			lualine.statusline = function(...)
+				if vim.api.nvim_win_get_config(0).relative ~= "" then
+					return nil
+				end
+				return draw(...)
+			end
+
 			-- lualine caches its highlight groups, so a new
 			-- palette needs the whole config rebuilt. core/theme
 			-- fires ColorScheme after every reload.

@@ -180,6 +180,17 @@ local function markdown(p)
 	hl(0, "MdAccent", { fg = p.accent })
 	hl(0, "MdSoft", { fg = p.accent_mid })
 
+	-- Rule under headings 1-3, drawn by the terminal's underline
+	-- in the heading colour: solid, long dashes, short dots.
+	-- Styles and colour need a terminfo declaring Smulx and
+	-- Setulc (module.nix switches WezTerm to its own); without
+	-- one, nvim falls back to a plain underline in the text
+	-- colour. Levels 4-6 get none.
+	hl(0, "MdHeadingRule1", { underline = true, sp = p.accent })
+	hl(0, "MdHeadingRule2", { underdashed = true, sp = p.accent })
+	hl(0, "MdHeadingRule3", { underdotted = true, sp = p.accent })
+	hl(0, "MdHeadingNoRule", {})
+
 	-- Heading text. render-markdown links its own RenderMarkdownHn
 	-- to these, so pointing them here colours icon and text alike.
 	for level = 1, 6 do

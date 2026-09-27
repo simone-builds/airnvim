@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240">
+  <title>Markdown source becomes a rendered page</title>
+  <rect width="640" height="240" rx="16" fill="#1f2335"/>
+
+  <!-- Source panel -->
+  <rect x="24" y="24" width="252" height="192" rx="10" fill="#292e42"/>
+  <text x="40" y="52" font-family="monospace" font-size="13" fill="#7a88b8">source.md</text>
+  <g font-family="monospace" font-size="16" fill="#c0caf5" xml:space="preserve">
+    <text x="40" y="88"><tspan fill="#ff9e64"># </tspan>Notes</text>
+    <text x="40" y="120"><tspan fill="#7aa2f7">- </tspan><tspan fill="#9ece6a">**</tspan>bold<tspan fill="#9ece6a">**</tspan></text>
+    <text x="40" y="152"><tspan fill="#7aa2f7">- </tspan><tspan fill="#9ece6a">*</tspan>italic<tspan fill="#9ece6a">*</tspan></text>
+    <text x="40" y="184"><tspan fill="#bb9af7">`</tspan>code<tspan fill="#bb9af7">`</tspan></text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M296 120 H336" stroke="#7aa2f7" stroke-width="4" stroke-linecap="round"/>
+  <path d="M328 108 L344 120 L328 132 Z" fill="#7aa2f7"/>
+
+  <!-- Rendered panel -->
+  <rect x="364" y="24" width="252" height="192" rx="10" fill="#e9ebf5"/>
+  <text x="380" y="52" font-family="sans-serif" font-size="13" fill="#6b7089">rendered</text>
+  <g font-family="sans-serif" fill="#24283b">
+    <text x="380" y="92" font-size="26" font-weight="bold">Notes</text>
+    <rect x="380" y="100" width="220" height="2" fill="#c3c8dc"/>
+    <circle cx="386" cy="126" r="3.5"/>
+    <text x="398" y="131" font-size="16" font-weight="bold">bold</text>
+    <circle cx="386" cy="158" r="3.5"/>
+    <text x="398" y="163" font-size="16" font-style="italic">italic</text>
+    <rect x="380" y="176" width="52" height="24" rx="5" fill="#d3d7e8"/>
+    <text x="388" y="193" font-family="monospace" font-size="15" fill="#8c4351">code</text>
+  </g>
+</svg>

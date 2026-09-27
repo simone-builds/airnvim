@@ -74,7 +74,9 @@ lua/core/
   keymaps.lua         # global maps (H, L)
   autocmds.lua        # filetype, indentation
   mdwrap.lua          # markdown text wrapping, :MdWrap
+  mdlink.lua          # follow links (<CR>, Ctrl+click), insert (\il)
   spell.lua           # opt-in spell checking, :SpellToggle
+  cmdalias.lua        # lowercase aliases for user commands
   rumdl.lua           # path to the generated rumdl rules file
   paths.lua           # resolves the real config directory
   palette.lua         # desktop colours, Material names -> ours
@@ -84,6 +86,8 @@ lua/tools/
   init.lua            # loads the modules below
   open.lua            # vim.ui.open -> configurable programs
   lze.lua             # :LzeNix, :LzeStatus
+  docs.lua            # :MdGuide, :NvCheat -> guides/
+  markdown.lua        # :PreviewMd, :PasteImage and its name popup
 
 lua/plugins/
   ui.lua              # lualine, alpha, devicons, fidget, todo, colorizer
@@ -96,11 +100,13 @@ lua/plugins/
   lint.lua            # nvim-lint
   format.lua          # conform
   treesitter.lua      # treesitter + textobjects
-  markdown.lua        # render-markdown, image.nvim
+  markdown.lua        # render-markdown, image.nvim, live-preview,
+                      # img-clip
   notes.lua           # obsidian.nvim
   ai.lua              # codecompanion
   colors.lua          # base16-nvim, the only spec with no trigger
 
+guides/               # :MdGuide and :NvCheat sheets, plus assets/
 queries/              # treesitter query overrides
 spell/                # dictionaries (.spl only)
 ```
@@ -161,12 +167,17 @@ constraint.
 | `ai.adapter`           | `copilot`        | Model backend                                  |
 | `obsidian.enable`      | `true`           | obsidian.nvim                                  |
 | `obsidian.vault`       | `""`             | Vault; empty keeps the plugin out of the build |
-| `markdown.line_length` | `75`             | `textwidth` in `.md` and MD013                 |
+| `markdown.line_length` | `75`             | `textwidth`, MD013, inline image width (cells) |
 | `markdown.images.enable` | `true`         | image.nvim; off saves 137 MB                   |
+| `markdown.images.max_height` | `80`       | Image height cap, % of the window              |
+| `markdown.images.paste_width` | `"15cm"`  | `{ width=... }` on pasted images, for the PDF  |
 | `spell.enable`         | `true`           | Whether `:SpellToggle` may turn spell on       |
 | `spell.languages`      | `[ "it" "en" ]`  | Dictionaries                                   |
 | `spell.filetypes`      | `[ "markdown" ]` | Where the toggle works                         |
 | `theme.colors_file`    | `""`             | Palette path; empty means the XDG cache        |
+| `mouse.scroll_lines`   | `5`              | Lines per mouse wheel step                     |
+| `oil.preview`          | `false`          | Open Oil's preview with the list               |
+| `oil.width`            | `75`             | Oil window width, % of the editor              |
 | `nerd_font.enable`     | `true`           | Include file-type icons                        |
 | `langs.python.enable`  | `false`          | `ruff`                                         |
 | `langs.web.enable`     | `false`          | ts/js and html servers; costs ~225 MB of node  |
@@ -207,6 +218,27 @@ specs, and the final `runtimePkgs` is the concatenation of all of them via
 | `H` / `L`   | n, x, o | core/keymaps.lua | Start / end of line   |
 | `-`         | n       | files.lua        | Oil in a float        |
 | `<leader>z` | n       | core/spell.lua   | Toggle spell checking |
+| `<leader>ip`| n       | markdown.lua     | Paste clipboard image |
+| `<leader>t` | n (.md) | core/keymaps.lua | Table of contents (`gO`) |
+| `<CR>`, `<C-LeftMouse>` | n (.md) | core/mdlink.lua | Follow link |
+| `<leader>il`| n, x (.md) | core/mdlink.lua | Insert link to a note |
+
+Following links is `core/mdlink.lua`. Plain `gf` and `gx` could not do
+it: render-markdown hides the path, `gf` on the link text looked for a
+file called "nota", `gx` handed the bare word to `xdg-open`, and rumdl's
+definition request returned nothing. The link is found through the
+`markdown_inline` treesitter tree; its path is resolved from the note's
+own directory (`%20` decoded); `#anchor` is matched against headings by
+slug. A missing `.md` asks to be created (default No) and is written at
+once, so the link is never left dangling. `<CR>` off a link falls back
+to itself. Ctrl+click replays `<LeftMouse>` before following:
+`getmousepos().column` ignores concealed text, and past the first link
+it picked the wrong one. `\il` searches from the cwd like `\sf`, or from
+the note's directory when the note lies outside it, and writes paths
+relative to the note, with `../` where needed.
+
+`<leader>p` is taken as a prefix by the treesitter swaps, which is why
+the image paste lives under `<leader>i`.
 
 ### Markdown emphasis (`.md` only, core/keymaps.lua)
 
@@ -295,10 +327,27 @@ so other filetypes are left alone.
   fires when the first markdown buffer opens, long after the colorscheme
   was applied, and no further `ColorScheme` event follows. Anything that
   has to react to the theme belongs in `core/theme.lua`.
-- Bullet icons are one glyph per nesting level (`•`, `⬩`, `-`, `-`) and
-  headings use numbered circles rather than hashes. With
-  `position = "overlay"` the icon **replaces** the marker, so an icon of
-  `" "` renders the line blank: that is what made list dashes look
+- Headings are numbered 1, 1.1, 1.1.1 from level 1, **rendered only**:
+  `heading_number()` in `markdown.lua` returns `ctx.sections` joined with
+  dots as render-markdown's `icons` function. Never write numbers into the
+  file: the PDF export numbers headings itself and would do it twice. A
+  skipped level shows as 0 (`1.0.1`) on purpose, next to rumdl's MD001,
+  which the rules mark `unfixable`: `rumdl fmt` on save used to raise the
+  level silently. `position = "inline"`, since a number is wider than the
+  `#` marks it replaces and `overlay` would cover the text.
+- Levels 1-3 carry a rule under the text: render-markdown's heading
+  "background" set to `MdHeadingRule1-3` (core/theme.lua), which are
+  underlines with `sp` in the heading colour and no fill: solid, dashed,
+  dotted. `width = "block"` with no padding or `min_width` ends it on the
+  last letter. The styles and the colour need Smulx/Setulc in terminfo:
+  under `TERM=xterm-256color`, WezTerm's default, all three came out as
+  the same plain light underline (checked by zooming screenshots). The
+  wrapper's `runShell` in module.nix therefore sets `TERM=wezterm`, with
+  the 4 KB terminfo from `pkgs.wezterm.passthru.terminfo`, when
+  `TERM_PROGRAM=WezTerm`. Undercurl diagnostics got fixed on the way.
+- Bullet icons are one glyph per nesting level (`•`, `⬩`, `-`, `-`).
+  With `position = "overlay"` the icon **replaces** the marker, so an
+  icon of `" "` renders the line blank: that is what made list dashes look
   missing everywhere except under the cursor and inside a visual
   selection, the two places anti-conceal turns rendering off.
 - Code carries no background, inline or fenced. `RenderMarkdownCode` and
@@ -331,7 +380,8 @@ so other filetypes are left alone.
   `strict = false`, otherwise long headings and code lines get flagged
   again.
 - Disabled rules: `MD024` (headings with the same text), `MD025` (multiple
-  level-1 headings), `MD041` (first line need not be a heading). The line
+  level-1 headings), `MD041` (first line need not be a heading), `MD045`
+  (images need no alt text: pasted screenshots rarely get one). The line
   limit applies to prose only.
 - `lua/core/rumdl.lua` is the single place exposing the rules file path to
   `lsp.lua` and `format.lua`.
@@ -360,7 +410,11 @@ so other filetypes are left alone.
   columns, the PDF keeps one line per line, and no blank lines are
   needed between them.
 - The reflow runs in an **unattached scratch buffer**, and the result is
-  written back with a single `nvim_buf_set_lines`. Do not move `gq` back
+  written back **hunk by hunk** (`vim.text.diff`, bottom-up), never with
+  one `nvim_buf_set_lines(0, -1)` over the whole buffer. A full replace
+  collapses every extmark: image.nvim's padding under an image vanished,
+  text was drawn over the picture, and its render on save failed with
+  `E966: Invalid line number`. Do not move `gq` back
   onto the real buffer: every paragraph becomes its own buffer change, and
   each change costs a full Treesitter reparse of the document. On a
   504-line file that was 126 reparses — `:w` took 5.2s against 0.2s now.
@@ -369,6 +423,12 @@ so other filetypes are left alone.
   render-markdown changed nothing; only stopping Treesitter did. Doing it
   in a scratch buffer also makes the reflow one undo step instead of one
   per paragraph.
+- A line holding only an image (`![..](..)` or `![[..]]`, column 0,
+  outside fenced code) gets a blank line on each side before the reflow.
+  Text next to it is otherwise the same paragraph: `gq` pulls it onto the
+  image line, and pandoc only turns an image alone in its paragraph into
+  a figure with a caption. The spaced text is parsed with a string parser,
+  since it is not in the buffer yet. Lone image lines are never wrapped.
 - Because the scratch buffer has no filetype, the options `gq` reads
   (`formatoptions`, `formatlistpat`, `comments`, indentation) are copied
   across explicitly. Setting `filetype` there instead would fire `FileType`
@@ -392,6 +452,68 @@ so other filetypes are left alone.
   plugin reaches imagemagick through `luajit-magick`, so the weight rides
   on the plugin and **removing the CLI package alone saves nothing**
   (measured: identical closure before and after).
+- Images are drawn below their link all the time
+  (`only_render_image_at_cursor = false`), not in a float on hover.
+  `max_width` is in terminal cells, not pixels, so it reuses
+  `markdown.line_length`: an image is never wider than the prose.
+  Height is capped by `markdown.images.max_height`, 80% of the window.
+  Proportions are kept, so whichever cap is reached first sets the size:
+  at 50% a 16:9 screenshot in a 28-row window stopped at 50 columns
+  instead of 75 (measured: cells 11×22 px, 75 columns need 22 rows).
+  In a short window or split the image still shrinks below the text
+  width; that is the cap working. `window_overlap_clear_enabled`
+  hides images under floats, which WezTerm otherwise leaves on top.
+- **WezTerm leaves torn copies of images behind when nvim scrolls.** It
+  attaches kitty images to text cells, so a terminal scroll carries them
+  along, and it ignores image.nvim's delete-by-id: after the redraw the
+  old copy survives in strips over the text. Reproduced by typing lines
+  under an image and by `^e`. `wezterm_image_redraw()` in `markdown.lua`
+  runs `:mode` (which clears the cells) and re-places every image, on
+  `WinScrolled` and when the line count changes, debounced 120 ms and
+  only under `TERM_PROGRAM=WezTerm`. Verified with screenshots before and
+  after. Do not extend it to every keystroke: typing inside a line moves
+  nothing and each `:mode` is a full redraw.
+- It clears through `backend.clear(id, true)`, **never `image:clear()`**:
+  that one also deletes the extmark whose `virt_lines` reserve the space
+  under the image. Nvim lost those lines on every redraw and put the view
+  back, so the mouse wheel stuck just above an image and never crossed
+  it. Tested by sending SGR wheel codes (`ESC[<65;x;yM`) through
+  `wezterm cli send-text` and reading `line("w0")` and `topfill` over
+  `--listen`: without images or with the fix, 5 lines per tick through
+  the image's filler rows.
+- **The wheel scrolls markdown with `scrolloff = 0`**, restored 400 ms
+  after the last step (`wheel_without_margin()`, buffer-local expr maps
+  on `<ScrollWheelDown>`/`<ScrollWheelUp>`). With the global margin of
+  10, a step that dragged the cursor onto an image line made nvim move
+  the view to fit the margin around 22 rows of image: going down one
+  step went *back* a line, going up one jumped 14 lines instead of 5.
+  Native nvim, reproduced with images and with `scrolloff` 5 too; only 0
+  gave a uniform 5 lines per step both ways. Restoring the option does
+  not move the view, so the keyboard keeps its margin.
+- Browser preview is `live-preview.nvim` (4 MB, pure lua), started with
+  `:PreviewMd` and ended with `:PreviewMd stop`. **module.nix patches out
+  the `uv.run()` at the end of its `Server:start`**: that nested loop
+  never returns while the socket listens, so pages were served while
+  the editor froze and ignored even SIGTERM. Do not drop the patch when
+  bumping the plugin without checking the line is gone upstream.
+  `dynamic_root = true` serves from the file's own directory, so
+  `assets/` resolves wherever nvim was started; `../` paths do not.
+  Callouts and wikilinks are not rendered in the browser.
+- `img-clip.nvim` pastes clipboard images. `tools/markdown.lua` asks for a
+  name in a float and saves `assets/YYYY-MM-DD_HH-MM-SS_<name>.png`
+  beside the file. The plugin defines its own `:PasteImage` on load; the
+  spec's `after` redefines it to go through the popup. The clipboard is
+  read with the host's `wl-paste`, like `git` a host dependency:
+  `wl-clipboard` would add ~200 MB of closure to the build.
+- The markdown paste template appends `{ width=<paste_width> }`
+  (`settings.markdown.images.paste_width`, default `15cm`, empty drops
+  it). Pandoc turns it into `image(..., width: 15cm)` for typst; the
+  editor ignores it (the treesitter `image` node ends at `)`, so
+  image.nvim still finds the picture) and rumdl raises nothing.
+  `mdwrap`'s image-line pattern accepts a trailing `{...}` for this.
+- `guides/` ships in the store with the config and is opened read-only
+  by `:MdGuide` / `:NvCheat`. Keep both files clean under the generated
+  rumdl rules; the cheatsheet uses headings and plain lists, no tables.
 - `startup.cowsay` defaults to off. It costs 60 MB, because cowsay is perl,
   and ~39 ms of blocking `io.popen` at every startup. Do not turn the
   default back on: the static header in `ui.lua` is the fallback.
@@ -402,7 +524,9 @@ so other filetypes are left alone.
   the current buffer and session only; nothing is persisted.
 - `:spelltoggle` and `:spellToggle` work too. User commands **must** start
   with a capital (`E183`), so the lowercase forms are `cnoreabbrev`
-  entries in `core/spell.lua`, not commands. They are guarded with
+  entries made by `core/cmdalias.lua`, not commands. The same helper
+  gives `:mdguide`, `:nvcheat`, `:previewmd`, `:pasteimage` and
+  `:mdwrap`. They are guarded with
   `getcmdline() ==#` so they only fire when the word is the whole command
   line: an unguarded abbreviation would also rewrite the word inside
   `:s//` patterns and command arguments. Cmdline completion stays
@@ -482,6 +606,25 @@ On the wrapper's `PATH`: `nixfmt`, `statix`, `deadnix` for Nix; `stylua`,
   wrapper's runtimepath. That template already moved once — it used to
   write `lua/plugins/dankcolors.lua`, and when it stopped, the palette
   silently froze for weeks. The JSON is the stable contract.
+- Floating windows get no statusline. Since 0.12 a float shows one when
+  its local 'statusline' is set, and lualine sets it on every window it
+  refreshes: Oil's preview grew a `[No Name]` bar and stood a row taller
+  than the list beside it. `ui.lua` wraps `lualine.statusline` to return
+  nil inside floats. Oil's float is 75% wide with the preview (`^p`) on
+  the right. Oil creates the preview `focusable = false`, which also
+  lets mouse events fall through to the window behind; a `BufWinEnter`
+  autocmd in `files.lua` sets `mouse = true` on the window marked
+  `oil_preview`, so the wheel scrolls it and the cursor stays in the
+  list. The preview is `fast_scratch`: only the first `&lines` lines of
+  the file are read, so the wheel reaches no further than that.
+- Oil previews text files only (`not_text()` in `files.lua`, passed as
+  `preview_win.disable_preview`): a list of binary extensions, then a
+  NUL byte in the first 8 KB, as git and grep test it. `fast_scratch`
+  reads "the first screenful of lines", and a PNG has almost no
+  newlines: a multi-MB screenshot was read nearly whole and shown as
+  garbage. SVG stays previewable. Width is `settings.oil.width` (%);
+  `settings.oil.preview` makes `-` call `open_float(nil, { preview =
+  {} })`, otherwise `^p` toggles it.
 - The statusline theme is built by `theme.lualine()`, not by lualine's
   own `auto`. `auto` derives its colours from the colorscheme **at the
   moment it is built**, and lualine loads before the palette is applied,

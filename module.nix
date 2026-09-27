@@ -88,10 +88,41 @@ in
         default = true;
         description = ''
           Render images inside the buffer: image files opened
-          directly, and markdown links under the cursor. Needs a
+          directly, and every image linked from a markdown
+          document, always visible below its link. Needs a
           terminal speaking the kitty graphics protocol (kitty,
           WezTerm, Ghostty, foot); elsewhere it does nothing.
           Turning it off saves about 137 MB.
+        '';
+      };
+
+      # Width is capped by line_length. The height cap only has to
+      # stop tall images: a 16:9 picture at 75 columns needs ~78%
+      # of a 28-row window, so anything lower shrinks landscape
+      # images below the text width.
+      markdown.images.max_height = lib.mkOption {
+        type = lib.types.ints.between 10 100;
+        default = 80;
+        description = ''
+          Tallest an inline image may be, as a percentage of
+          the window height. The width limit is
+          `markdown.line_length`; whichever is reached first
+          decides the size, since the proportions are kept.
+        '';
+      };
+
+      # Pandoc reads `{ width=... }` after an image and hands it to
+      # typst as `image(..., width: ...)`. The editor ignores it,
+      # so it sizes the printed page only.
+      markdown.images.paste_width = lib.mkOption {
+        type = lib.types.str;
+        default = "15cm";
+        example = "80%";
+        description = ''
+          Width written after an image pasted with `:PasteImage`,
+          as a pandoc attribute: `![](x.png){ width=15cm }`. It
+          only matters when converting to PDF; empty leaves the
+          attribute out.
         '';
       };
 
@@ -100,7 +131,9 @@ in
         default = 75;
         description = ''
           Wrap column for markdown. Sets `textwidth` in .md
-          buffers and rumdl's MD013 rule.
+          buffers and rumdl's MD013 rule, and caps the width
+          of inline images, so a picture is never wider than
+          the text around it.
         '';
       };
 
@@ -123,7 +156,13 @@ in
             # MD024: headings repeating the same text
             # MD025: more than one level-1 heading per file
             # MD041: a file need not start with `#`
-            disable = ["MD024", "MD025", "MD041"]
+            # MD045: images need no alt text; pasted screenshots
+            #        often have none, and pandoc makes it a caption
+            disable = ["MD024", "MD025", "MD041", "MD045"]
+            # MD001 (a skipped heading level) is only reported: the
+            # formatter on save would otherwise quietly raise it one
+            # level, and which level was meant is the author's call
+            unfixable = ["MD001"]
 
             [MD003]
             style = "atx"
@@ -178,6 +217,40 @@ in
           $XDG_CACHE_HOME/DankMaterialShell/dms-colors.json.
           If the file is missing the config falls back to the
           built-in palette in lua/core/palette.lua.
+        '';
+      };
+
+      # --- File explorer (Oil, opened with `-`) ---
+      oil = {
+        preview = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Open the file preview beside the list every time the
+            explorer opens. Off by default: `^p` toggles it on
+            demand. Only text files are previewed, and only their
+            first screenful of lines.
+          '';
+        };
+
+        width = lib.mkOption {
+          type = lib.types.ints.between 30 100;
+          default = 75;
+          example = 60;
+          description = ''
+            Width of the explorer window, as a percentage of the
+            editor. With the preview open, list and preview
+            share it.
+          '';
+        };
+      };
+
+      mouse.scroll_lines = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 5;
+        description = ''
+          Lines moved by one step of the mouse wheel. Neovim's
+          own default is 3.
         '';
       };
 
@@ -312,6 +385,22 @@ in
   config = {
     # The binary stays `nvim`, with `nv` as its only alias
     binName = "nvim";
+
+    # WezTerm announces itself as xterm-256color, whose terminfo
+    # declares no underline styles (Smulx) or underline colour
+    # (Setulc): nvim then draws every undercurl, dashed or
+    # dotted line as a plain underline in the text colour, and
+    # the rules under markdown headings all look alike. Its own
+    # terminfo (4 KB, shipped here so the host needs nothing)
+    # declares both. Only nvim sees the change.
+    runShell = [
+      ''
+        if [ "''${TERM_PROGRAM:-}" = WezTerm ] && [ "''${TERM:-}" = xterm-256color ]; then
+          export TERMINFO_DIRS="${pkgs.wezterm.passthru.terminfo}/share/terminfo''${TERMINFO_DIRS:+:$TERMINFO_DIRS}"
+          export TERM=wezterm
+        fi
+      ''
+    ];
 
     # Providers for remote plugins written in other languages:
     # nothing here uses them and they drag in nodejs, python3
@@ -460,6 +549,21 @@ in
 
             # Markdown
             render-markdown-nvim
+            # Browser preview: pure lua, its own server runs
+            # inside nvim, no node or deno (4 MB).
+            # Server:start ends in a nested `uv.run()` that never
+            # returns while the socket listens: pages are served
+            # but the editor freezes on `:PreviewMd`. nvim's main
+            # loop is libuv already and serves the socket alone.
+            (live-preview-nvim.overrideAttrs (old: {
+              postPatch = (old.postPatch or "") + ''
+                substituteInPlace lua/livepreview/server/init.lua \
+                  --replace-fail $'\tuv.run()\n' ""
+              '';
+            }))
+            # Clipboard images saved into assets/; reads the
+            # clipboard with the host's wl-paste or xclip
+            img-clip-nvim
 
             # Treesitter: only the grammars actually used
             nvim-treesitter-textobjects
