@@ -782,6 +782,17 @@ On the wrapper's `PATH`: `nixfmt`, `statix`, `deadnix` for Nix; `stylua`,
   colours (checked group by group), except GitSigns: gitsigns loads after
   the startup transparency pass and keeps a background, which the pass on
   the way back then clears, as it was meant to.
+- The terminal paints its padding and the strip under the last row with
+  its own background, so a reader theme sends OSC 11/12 (background,
+  cursor) through `nvim_ui_send`, and OSC 111/112 on `:ReaderOff`,
+  `VimLeavePre` and `VimSuspend`; `VimResume` sends them again. Without
+  it `:ReaderLight` had a dark frame.
+- Nvim sets `background` from **every** OSC 11 reply (a `TermResponse`
+  autocmd in its defaults, dropped only when `background` is set outside
+  Lua), and the TUI asks again on resume. After `^z`/`fg` the reply said
+  "dark" and Gruvbox reloaded dark over `:ReaderLight`, with the Md groups
+  gone. An `OptionSet background` autocmd in `reader.lua` puts the
+  reader's variant back. Checked with screenshots, both variants.
 - `vim.fn.stdpath("config")` points at a directory a wrapper user usually
   does not have — the Lua config lives in the Nix store, and that path is
   not even on the runtimepath. Use `require("core.paths").config()`. The

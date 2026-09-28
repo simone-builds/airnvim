@@ -336,8 +336,10 @@ than replacing it: while a reader theme is on, the transparency pass and
 the palette watcher stand aside, and a wallpaper change is picked up on the
 way out. Markdown keeps its look, headings in the accent colour and
 emphasis halfway to the text, recoloured from Gruvbox by the same rules.
-The theme is global and lasts for the session only. The plugin is loaded
-on the first call.
+The terminal's own background and cursor follow the page too, so no frame
+of desktop colour is left around it, and they are handed back when nvim
+exits or is suspended. The theme is global and lasts for the session only.
+The plugin is loaded on the first call.
 
 ### Weight and what it is made of
 

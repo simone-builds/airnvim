@@ -35,6 +35,64 @@ local function colours(variant)
 	})
 end
 
+-- Terminal colours --
+-- The grid is nvim's, but the terminal's padding around it
+-- and the strip under the last row are painted with the
+-- terminal's own background: a cream page got a dark frame,
+-- and the cursor kept the desktop colour. OSC 11 and 12 set
+-- background and cursor; 111 and 112 give the terminal its
+-- own back. Without a UI (headless) nothing is sent.
+local function terminal(p)
+	if not vim.api.nvim_ui_send then
+		return
+	end
+	if p then
+		vim.api.nvim_ui_send(("\027]11;%s\027\\\027]12;%s\027\\"):format(p.bg, p.fg))
+	else
+		vim.api.nvim_ui_send("\027]111\027\\\027]112\027\\")
+	end
+end
+
+-- Leaving or suspending nvim must not leave the shell cream
+vim.api.nvim_create_autocmd({ "VimLeavePre", "VimSuspend" }, {
+	desc = "Give the terminal its colours back",
+	callback = function()
+		if require("core.theme").reader then
+			terminal(nil)
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd("VimResume", {
+	desc = "Repaint the terminal for the reader theme",
+	callback = function()
+		local theme = require("core.theme")
+		if theme.reader then
+			terminal(theme.colors)
+		end
+	end,
+})
+
+-- Nvim sets 'background' from every OSC 11 reply, and the TUI
+-- asks again on resume: the terminal, just given its own dark
+-- colour back, answered "dark" and gruvbox reloaded dark over
+-- :ReaderLight, markdown groups gone. The reader's variant is
+-- put back whenever something else changes it.
+vim.api.nvim_create_autocmd("OptionSet", {
+	pattern = "background",
+	desc = "Keep the reader theme's variant",
+	callback = function()
+		local theme = require("core.theme")
+		if theme.reader and vim.v.option_new ~= theme.reader then
+			vim.schedule(function()
+				if theme.reader then
+					M.on(theme.reader)
+				end
+			end)
+		end
+	end,
+})
+
 function M.on(variant)
 	local theme = require("core.theme")
 	require("lze").trigger_load("gruvbox.nvim")
@@ -55,6 +113,7 @@ function M.on(variant)
 	vim.cmd.colorscheme("gruvbox")
 
 	theme.markdown(theme.colors)
+	terminal(theme.colors)
 end
 
 function M.off()
@@ -71,6 +130,7 @@ function M.off()
 	vim.g.colors_name = nil
 	vim.o.background = saved_background
 	theme.apply()
+	terminal(nil)
 end
 
 vim.api.nvim_create_user_command("ReaderLight", function()
