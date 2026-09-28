@@ -46,7 +46,8 @@ flag that defaults to off.
    the lists, and calls `nixInfo.lze.load(specs)`.
 6. `require("core.theme")`, which reads the palette, hands it to
    `base16-nvim` and applies the transparency. It comes last because the
-   colorscheme plugin has to be loaded before it can be fed.
+   colorscheme plugin has to be loaded before it can be fed. Then
+   `require("core.reader")`, which only defines the `:Reader*` commands.
 
 ### The `nixInfo` API in Lua
 
@@ -80,6 +81,7 @@ lua/core/
   paths.lua           # resolves the real config directory
   palette.lua         # desktop colours, Material names -> ours
   theme.lua           # applies the palette, transparent background
+  reader.lua          # :ReaderLight/Dark/Off, Gruvbox over the palette
 
 lua/tools/
   init.lua            # loads the modules below
@@ -104,7 +106,8 @@ lua/plugins/
                       # img-clip
   notes.lua           # obsidian.nvim
   ai.lua              # codecompanion
-  colors.lua          # base16-nvim, the only spec with no trigger
+  colors.lua          # base16-nvim, the only spec loaded at startup
+                      # with no trigger; gruvbox (trigger_load)
 
 guides/               # :MdGuide and :NvCheat sheets, plus assets/
 queries/              # treesitter query overrides
@@ -764,6 +767,21 @@ On the wrapper's `PATH`: `nixfmt`, `statix`, `deadnix` for Nix; `stylua`,
   the watcher in `core/theme.lua` loses its inode at the first change and
   has to be restarted after every event. A single-shot watcher updates the
   theme once and then goes deaf.
+- **Reader themes** (`core/reader.lua`) put Gruvbox *over* the desktop
+  palette, never in its place. `theme.reader` ("light", "dark" or nil)
+  makes the transparency autocmd and the palette watcher stand aside;
+  `theme.colors` holds Gruvbox under the palette's names (through
+  `palette.derive()`), so `theme.markdown()` and `theme.lualine()` work
+  unchanged. Both ways go through `highlight clear` and a nil
+  `colors_name`: base16 sets no `colors_name` and overwrites only its own
+  groups, so without the clear Gruvbox would inherit base16 leftovers and
+  the way back would keep Gruvbox ones, and with `colors_name` still
+  `gruvbox`, setting `background` would reload Gruvbox. `background` is
+  saved on entry and restored on exit, because `palette.load()` picks its
+  variant from it. A round trip leaves every group with its starting
+  colours (checked group by group), except GitSigns: gitsigns loads after
+  the startup transparency pass and keeps a background, which the pass on
+  the way back then clears, as it was meant to.
 - `vim.fn.stdpath("config")` points at a directory a wrapper user usually
   does not have — the Lua config lives in the Nix store, and that path is
   not even on the runtimepath. Use `require("core.paths").config()`. The

@@ -510,6 +510,8 @@ in
             # Theme. The palette comes from the desktop, see
             # lua/core/palette.lua; this only paints it on.
             base16-nvim
+            # :ReaderLight / :ReaderDark, see lua/core/reader.lua
+            gruvbox-nvim
 
             # Interface
             lualine-nvim

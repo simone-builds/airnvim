@@ -228,6 +228,13 @@ function M.load()
 		end
 	end
 
+	return M.derive(p)
+end
+
+-- The colours mixed from the others, shared with the reader
+-- themes (lua/core/reader.lua) so their markdown follows the
+-- same rules.
+function M.derive(p)
 	p.accent_mid = M.blend(p.accent, p.fg, ACCENT_MIX)
 	p.code = M.readable(p.red, p.bg, p.fg, CODE_CONTRAST)
 	p.mark = M.blend(p.accent, p.bg, HIGHLIGHT_MIX)

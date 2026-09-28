@@ -19,4 +19,27 @@ return {
 
 		priority = 1000,
 	},
+
+	-- Reader themes --
+	-- Gruvbox for `:ReaderLight` / `:ReaderDark`. No trigger
+	-- of its own: lua/core/reader.lua loads it with
+	-- trigger_load on the first call.
+	{
+		"gruvbox.nvim",
+
+		enabled = true,
+		auto_enable = false,
+		lazy = true,
+
+		after = function(plugin)
+			require("gruvbox").setup(plugin.opts)
+		end,
+
+		opts = {
+			contrast = "",
+			-- Opaque on purpose: a cream page over a dark
+			-- terminal would be unreadable
+			transparent_mode = false,
+		},
+	},
 }

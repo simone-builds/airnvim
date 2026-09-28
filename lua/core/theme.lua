@@ -10,6 +10,11 @@ local palette = require("core.palette")
 
 local M = {}
 
+-- "light" or "dark" while a reader theme (lua/core/reader.lua)
+-- is on, nil otherwise. It keeps its opaque background and
+-- the desktop palette waits until it is turned off.
+M.reader = nil
+
 -- TRANSPARENCY
 --------------------------------------------------
 
@@ -17,6 +22,10 @@ vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
 	pattern = "*",
 	desc = "Force transparent background for UI elements",
 	callback = function()
+		if M.reader then
+			return
+		end
+
 		-- Drop the background only, keep fg and styles
 		local function set_transparent(group)
 			---@type any
@@ -176,7 +185,7 @@ end
 -- editor is transparent, and a panel behind a snippet fights
 -- with whatever the terminal shows through. Only the text is
 -- coloured, by treesitter.
-local function markdown(p)
+function M.markdown(p)
 	local hl = vim.api.nvim_set_hl
 
 	hl(0, "MdHeading", { fg = p.accent, bold = true })
@@ -267,7 +276,7 @@ function M.apply()
 	vim.cmd("doautocmd ColorScheme")
 
 	syntax(p)
-	markdown(p)
+	M.markdown(p)
 end
 
 -- FOLLOWING THE DESKTOP
@@ -295,7 +304,11 @@ local function watch()
 		path,
 		{},
 		vim.schedule_wrap(function()
-			M.apply()
+			-- A reader theme stays put: the new palette is read
+			-- when it is turned off
+			if not M.reader then
+				M.apply()
+			end
 			watch()
 		end)
 	)

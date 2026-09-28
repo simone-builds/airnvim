@@ -327,6 +327,18 @@ rest of the config only ever speaks of `fg`, `accent` and `muted`. When the
 file is missing, a built-in palette takes over and the editor is still
 readable.
 
+### Reader themes
+
+For long reading sessions `:ReaderLight` and `:ReaderDark` switch to
+[Gruvbox](https://github.com/ellisonleao/gruvbox.nvim) on an opaque page;
+`:ReaderOff` goes back to the desktop palette. They sit on top of it rather
+than replacing it: while a reader theme is on, the transparency pass and
+the palette watcher stand aside, and a wallpaper change is picked up on the
+way out. Markdown keeps its look, headings in the accent colour and
+emphasis halfway to the text, recoloured from Gruvbox by the same rules.
+The theme is global and lasts for the session only. The plugin is loaded
+on the first call.
+
 ### Weight and what it is made of
 
 The closure is 376 MB with the defaults, and two knobs move most of it.
@@ -474,7 +486,8 @@ module.nix           # feature flags, plugins, packages
 init.lua             # bootstrap: lze handlers, spec loading
 
 lua/core/            # options, keymaps, autocmds, markdown wrap and
-                     # links, save pipeline, spell, theme, paths
+                     # links, save pipeline, spell, theme, reader
+                     # themes, paths
 lua/plugins/         # one file per area, each returning lze specs
 lua/tools/           # user commands: external open, lze debugging,
                      # guides, markdown preview and paste, :MdFormatDir

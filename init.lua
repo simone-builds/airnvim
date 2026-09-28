@@ -111,3 +111,4 @@ nixInfo.lze.load(specs)
 -- Last: base16-nvim has to be loaded before the palette can
 -- be handed to it.
 require("core.theme")
+require("core.reader")
