@@ -87,7 +87,7 @@ lua/tools/
   lze.lua             # :LzeNix, :LzeStatus
   docs.lua            # :MdGuide, :NvCheat -> guides/
   markdown.lua        # :PreviewMd, :PasteImage and its name popup
-  mdformat.lua        # :MdFormatDir, format a directory of .md files
+  mdformat.lua        # :MdFormatDir[Recursive], format .md files
 
 lua/plugins/
   ui.lua              # lualine, alpha, devicons, fidget, todo, colorizer
@@ -370,6 +370,11 @@ so other filetypes are left alone.
   of a single space renders the line blank: that is what made list dashes
   look missing everywhere except under the cursor and inside a visual
   selection, the two places anti-conceal turns rendering off.
+- Checkboxes have the same trap. The icon is drawn over the `[ ]` and the
+  space after it, and whatever it does not cover is concealed, the `-`
+  marker included: the empty unchecked icon made `- [ ] task` render as a
+  bare `task`. The icons are `󰄱` / `󰱒`, or `☐` / `☑` with
+  `nerd_font.enable` off, each followed by a space.
 - Code carries no background, inline or fenced. `RenderMarkdownCode` and
   `RenderMarkdownCodeInline` are set with `bg = "NONE"` instead of being
   left alone, because their default link is `ColorColumn`, which the
@@ -594,6 +599,11 @@ so other filetypes are left alone.
   progress float can cancel. Output identical to `:w` file by file. 60
   small files took 4.6 s with the earlier two-pass pipeline; not
   re-measured with three passes.
+- `:MdFormatDirRecursive` is the same run over the whole tree under that
+  directory (`vim.fs.dir` with `depth = math.huge`). Hidden files and
+  directories are skipped, and only lowercase `.md` counts. Symlinked
+  directories are not followed, so a link pointing up cannot loop. The
+  float and the report show paths relative to the starting directory.
 - `startup.cowsay` defaults to off. It costs 60 MB, because cowsay is perl,
   and ~39 ms of blocking `io.popen` at every startup. Do not turn the
   default back on: the static header in `ui.lua` is the fallback.

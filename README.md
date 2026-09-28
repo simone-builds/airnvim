@@ -174,9 +174,10 @@ Saving runs `rumdl`, then the reflow, then `rumdl` again. The first pass
 fixes list indentation and markers before the prose is measured, so a file
 reaches its final form in a single save instead of changing again on the
 next one. `:MdFormatDir` runs the same pipeline on every `.md` of a
-directory (the current file's by default, subdirectories excluded): it asks
-first, shows a progress bar that `q` cancels, writes only the files that
-change and skips any with unsaved edits.
+directory (the current file's by default, subdirectories excluded), and
+`:MdFormatDirRecursive` on its whole tree, hidden files and directories
+left out: both ask first, show a progress bar that `q` cancels, write only
+the files that change and skip any with unsaved edits.
 
 The reflow knows what it must not touch. The header line of an Obsidian
 callout, the one holding `[!type]` and the title, is left alone, so the

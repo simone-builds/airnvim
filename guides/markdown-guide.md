@@ -506,6 +506,7 @@ reads the title and date from it.
   closes it
 - `:MdWrap` rewraps the paragraphs; saving does it too
 - `:MdFormatDir` formats every `.md` in the file's directory at once
+- `:MdFormatDirRecursive` does the same through every subdirectory too
 - `#word` is a tag and is never touched, even at the start of a line;
   `##Title` without its space becomes `## Title` on save. A level-1 heading
   needs its space typed: `#Title` stays a tag

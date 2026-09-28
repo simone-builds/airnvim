@@ -194,6 +194,7 @@ They go through the clipboard: afterwards it holds the selected words.
 - `:MdWrap` rewrap every paragraph; saving does it too
 - `:MdFormatDir` format every `.md` in the current file's directory as
   saving would, subdirectories excluded; see airnvim commands below
+- `:MdFormatDirRecursive` the same, subdirectories included
 - `:RenderMarkdown toggle` show the raw text instead of the rendering
 
 ### Headings and folds
@@ -443,6 +444,10 @@ searches every command, these included.
   - subdirectories are left alone
   - a file open with unsaved changes is skipped
   - a bar shows the progress; `q` stops after the current file
+- `:MdFormatDirRecursive` the same, down every subdirectory:
+  - starts from the current file's directory, or a `path` given
+  - hidden files and directories (`.git`, `.obsidian`) are skipped
+  - only `.md` files are touched
 - `:PreviewMd` browser preview; `:PreviewMd stop` ends it
 - `:PasteImage` paste the clipboard image; `␣ip` does the same
 - `:LzeStatus` installed plugins and whether they are loaded

@@ -83,6 +83,14 @@ local function heading_number(ctx)
 	return table.concat(sections, ".") .. " "
 end
 
+-- Checkbox icons. The icon is drawn over `[ ] ` and whatever it
+-- does not cover is concealed, list marker included: an empty
+-- icon made `- [ ] task` render as a bare `task`. Nerd Font
+-- glyphs from one family, plain Unicode without the font.
+local nerd_font = require("core.setting").bool(true, "settings", "nerd_font", "enable")
+local checkbox_icons = nerd_font and { unchecked = "󰄱 ", checked = "󰱒 " }
+	or { unchecked = "☐ ", checked = "☑ " }
+
 -- WezTerm image ghosts --
 -- WezTerm attaches kitty images to text cells. When nvim
 -- scrolls the screen, the cells move and take the image with
@@ -317,11 +325,11 @@ return {
 			checkbox = {
 				enabled = true,
 				unchecked = {
-					icon = "",
+					icon = checkbox_icons.unchecked,
 					highlight = "MdAccent",
 				},
 				checked = {
-					icon = "󰄲",
+					icon = checkbox_icons.checked,
 					highlight = "MdAccent",
 				},
 				custom = {
