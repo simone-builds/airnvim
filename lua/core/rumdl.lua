@@ -63,6 +63,8 @@ function M.format(bufnr)
 	local opts = { bufnr = bufnr, timeout_ms = M.TIMEOUT_MS, formatters = { "rumdl" } }
 	-- rumdl deletes 3+ trailing spaces with their hard break
 	mdwrap.normalize_breaks(bufnr)
+	-- and makes a heading of text with `---` under it
+	mdwrap.separate_rules(bufnr)
 	conform.format(opts)
 	mdwrap.wrap(bufnr)
 	conform.format(opts)

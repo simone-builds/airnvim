@@ -57,6 +57,14 @@ breaks here without a new paragraph.
 In airnvim select the text in visual mode and press `Ctrl-b` (bold),
 `Ctrl-i` (italic) or ``Ctrl-` `` (inline code).
 
+```markdown
+Text with a ==highlighted== word.
+```
+
+Text with a ==highlighted== word.
+
+Obsidian and the editor show it; pandoc needs its `mark` extension.
+
 ---
 
 ## Lists
@@ -97,8 +105,8 @@ In airnvim select the text in visual mode and press `Ctrl-b` (bold),
 ```
 
 1. Prepare
-  - check the tools
-  - read the notes
+   - check the tools
+   - read the notes
 2. Build
 
 Items under a number are indented to the text of that number: three spaces
@@ -117,6 +125,16 @@ after `1.`, four after `10.`.
 - [x] Done
 - [-] In progress
 - [~] Important
+
+Numbered tasks keep their number in front of the box:
+
+```markdown
+1. [ ] First step
+2. [x] Second step
+```
+
+1. [ ] First step
+2. [x] Second step
 
 ---
 
@@ -471,7 +489,10 @@ A claim that needs a source.[^1]
 ---
 ```
 
-Three dashes alone on a line, with blank lines around them.
+Three dashes alone on a line, with blank lines around them. Saving adds the
+blank lines when they are missing, so `---` typed right under a line of
+text stays a rule instead of turning that text into a heading. `===` gets
+the same treatment and is rewritten as `---`.
 
 ---
 

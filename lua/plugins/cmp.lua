@@ -19,30 +19,32 @@ return {
 				require("luasnip.loaders.from_vscode").lazy_load()
 			end)
 
+			-- Nerd Font `nf-md` glyphs only (U+F0000 and up): the
+			-- ones below U+F8FF were lost once in a copy, as spaces
 			local kind_icons = {
-				Text = "",
+				Text = "󰦨",
 				Method = "󰆧",
 				Function = "󰊕",
-				Constructor = "",
+				Constructor = "󱁤",
 				Field = "󰇽",
 				Variable = "󰂡",
 				Class = "󰠱",
-				Interface = "",
-				Module = "",
+				Interface = "󰠲",
+				Module = "󰏗",
 				Property = "󰜢",
-				Unit = "",
+				Unit = "󰑭",
 				Value = "󰎠",
-				Enum = "",
+				Enum = "󰉺",
 				Keyword = "󰌋",
-				Snippet = "",
+				Snippet = "󰆐",
 				Color = "󰏘",
 				File = "󰈙",
-				Reference = "",
+				Reference = "󰈇",
 				Folder = "󰉋",
-				EnumMember = "",
+				EnumMember = "󰉻",
 				Constant = "󰏿",
-				Struct = "",
-				Event = "",
+				Struct = "󰙅",
+				Event = "󱐋",
 				Operator = "󰆕",
 				TypeParameter = "󰅲",
 			}

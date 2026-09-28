@@ -146,6 +146,12 @@ local ACCENT_MIX = 0.5
 -- and gets read at the same speed as the words around it.
 local CODE_CONTRAST = 7
 
+-- How much of `accent` tints the background behind
+-- `==highlighted==` text. Mixed into `bg` of the current
+-- variant, so it is a light wash in both themes: a dim purple
+-- on dark, a pale one on light. Higher makes the mark louder.
+local HIGHLIGHT_MIX = 0.25
+
 -- LOADING
 --------------------------------------------------
 
@@ -224,6 +230,7 @@ function M.load()
 
 	p.accent_mid = M.blend(p.accent, p.fg, ACCENT_MIX)
 	p.code = M.readable(p.red, p.bg, p.fg, CODE_CONTRAST)
+	p.mark = M.blend(p.accent, p.bg, HIGHLIGHT_MIX)
 	return p
 end
 

@@ -47,6 +47,101 @@ local function hard_break(line)
 	return line and line:match([[(\)$]])
 end
 
+-- WORDS THAT MUST NOT START A LINE
+--------------------------------------------------
+-- `gq` breaks at any space. A word that opens a block when it
+-- starts a line turned the rest of the sentence into something
+-- else whenever a wrap landed right before it: ` - ` a list
+-- item, ` # ` a heading, ` > ` a quote, ` 1. ` a numbered list.
+-- rumdl then made it permanent, adding blank lines around the
+-- new list and stripping the heading's full stop. A wikilink
+-- split over two lines is no longer a link, in Obsidian or here.
+-- The spaces in front of such words, and inside `[[...]]` and
+-- `$...$`, are swapped for a glue character `gq` never breaks
+-- at, then swapped back.
+
+-- One cell wide and not whitespace to `gq`; the first one the
+-- text does not already contain is used
+local GLUES = {
+	"\194\160", -- no-break space
+	"\226\128\135", -- figure space
+	"\226\128\175", -- narrow no-break space
+}
+
+local function opens_block(word)
+	return word:match("^[-+*]$") -- bullet
+		or word:match("^%d+[.)]$") -- numbered item
+		or word:match("^#+$") -- ATX heading
+		or word:match("^>") -- quote
+		or (#word >= 2 and word:match("^[-=_*]+$")) -- rule, setext
+		or word:match("^```") -- code fence
+		or word:match("^~~~")
+		or word:match("^<") -- HTML block
+end
+
+-- Glues a joined segment. Indentation, quote leaders, the list
+-- marker and a checkbox belong to the line itself and are left
+-- as they are. Returns nil when no glue character is free.
+local function protect(line)
+	local glue
+	for _, candidate in ipairs(GLUES) do
+		if not line:find(candidate, 1, true) then
+			glue = candidate
+			break
+		end
+	end
+	if not glue then
+		return nil
+	end
+
+	local lead = line:match("^[%s>]*")
+	local after = line:sub(#lead + 1)
+	lead = lead .. (after:match("^[-+*] +") or after:match("^%d+[.)] +") or "")
+	lead = lead .. (line:sub(#lead + 1):match("^%[.%] +") or "")
+	local rest = line:sub(#lead + 1)
+
+	local function bind(span)
+		return (span:gsub(" ", glue))
+	end
+	-- Inline math as pandoc reads it: no space inside either
+	-- dollar, and no digit after the closing one, so prices
+	-- ($5 and $10) are not math
+	local function bind_math(text)
+		return (
+			text:gsub("()(%$[^%s$][^$]-%$)()", function(_, span, next_col)
+				local closes = #span == 3 or span:sub(-2, -2):match("%S")
+				if closes and not text:sub(next_col, next_col):match("%d") then
+					return bind(span)
+				end
+			end)
+		)
+	end
+	-- Wikilinks and math only outside inline code, where a `$`
+	-- or `[[` is literal: `$$` in backticks once made the whole
+	-- sentence between two of them one unbreakable word
+	local parts, pos = {}, 1
+	while true do
+		local s, e = rest:find("(`+).-%1", pos)
+		local prose = rest:sub(pos, s and s - 1 or -1)
+		parts[#parts + 1] = bind_math((prose:gsub("%[%[.-%]%]", bind)))
+		if not s then
+			break
+		end
+		parts[#parts + 1] = rest:sub(s, e)
+		pos = e + 1
+	end
+	rest = table.concat(parts)
+	-- Block openers everywhere, code spans included: a line
+	-- starting `# ` is a heading even inside backticks, since
+	-- blocks are parsed before inline code
+	rest = rest:gsub("( +)(%S+)", function(spaces, word)
+		if opens_block(word) then
+			return glue:rep(#spaces) .. word
+		end
+	end)
+	return lead .. rest, glue
+end
+
 -- WRAP COLUMN
 --------------------------------------------------
 
@@ -184,6 +279,37 @@ local function apply(bufnr, old, new)
 		-- An insertion reports the line it goes after
 		local first = a_count == 0 and a_start or a_start - 1
 		vim.api.nvim_buf_set_lines(bufnr, first, first + a_count, false, replacement)
+	end
+end
+
+-- RULES UNDER TEXT
+--------------------------------------------------
+-- `---` right under a line of text makes that text a level-2
+-- heading (setext), `===` a level-1 one, and rumdl rewrites
+-- them as `## text` / `# text`: a rule typed without its blank
+-- line took the paragraph above with it. A line of three or
+-- more dashes or equals signs at column 0 is always a rule
+-- here: `===` becomes `---`, since markdown has no `===` rule,
+-- and both get a blank line on each side. core/rumdl.lua runs
+-- this before its first rumdl pass, which would already have
+-- made the heading. Front matter and fenced code are left alone.
+function M.separate_rules(bufnr)
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local front = front_matter_end(lines)
+	local out, fence, outside = {}, nil, nil
+	for i, line in ipairs(lines) do
+		fence, outside = track_fence(line, fence)
+		local rule = outside and i > front and (line:match("^%-%-%-+%s*$") or line:match("^===+%s*$"))
+		if rule and #out > 0 and out[#out]:match("%S") then
+			table.insert(out, "")
+		end
+		table.insert(out, (rule and line:match("^=")) and "---" or line)
+		if rule and lines[i + 1] and lines[i + 1]:match("%S") then
+			table.insert(out, "")
+		end
+	end
+	if not vim.deep_equal(out, lines) then
+		apply(bufnr, lines, out)
 	end
 end
 
@@ -350,8 +476,17 @@ function M.wrap(bufnr)
 			if last > first then
 				vim.cmd(("silent keepjumps %d,%djoin"):format(first, last))
 			end
+			local glued, glue = protect(line_at(first))
+			if glued then
+				set_line(first, glued)
+			end
 			vim.cmd(("silent keepjumps normal! %dGgqq"):format(first))
 			last = last + vim.api.nvim_buf_line_count(scratch) - before
+			if glue then
+				for row = first, last do
+					set_line(row, (line_at(row):gsub(glue, " ")))
+				end
+			end
 
 			if marker then
 				set_line(last, line_at(last) .. marker)

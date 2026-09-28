@@ -558,12 +558,19 @@ in
             # the patch adds it, so heading_number() in
             # lua/plugins/markdown.lua can count the document's
             # level-1 headings and drop the title's number.
+            # A checkbox hides its list marker, so `1. [ ]` lost
+            # its number; the second patch keeps numbered markers
+            # (`1.`, `1)`) and still hides `-`, `+` and `*`.
             (render-markdown-nvim.overrideAttrs (old: {
               postPatch = (old.postPatch or "") + ''
                 substituteInPlace lua/render-markdown/render/markdown/heading.lua \
                   --replace-fail \
                     "sections = self.node:sections()," \
                     "sections = self.node:sections(), buf = self.context.buf,"
+                substituteInPlace lua/render-markdown/render/markdown/checkbox.lua \
+                  --replace-fail \
+                    "if self.config.bullet then" \
+                    "if self.config.bullet or self.data.marker.type == 'list_marker_dot' or self.data.marker.type == 'list_marker_parenthesis' then"
               '';
             }))
             # Browser preview: pure lua, its own server runs

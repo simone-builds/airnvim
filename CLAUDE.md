@@ -233,7 +233,7 @@ terminal mode: there it would delay every typed space.
 
 Following links is `core/mdlink.lua`. Plain `gf` and `gx` could not do it:
 render-markdown hides the path, `gf` on the link text looked for a file
-called "nota", `gx` handed the bare word to `xdg-open`, and rumdl's
+called "note", `gx` handed the bare word to `xdg-open`, and rumdl's
 definition request returned nothing. The link is found through the
 `markdown_inline` treesitter tree; its path is resolved from the note's own
 directory (`%20` decoded); `#anchor` is matched against headings by slug. A
@@ -329,7 +329,11 @@ so other filetypes are left alone.
   for bullets, ordered markers and checkboxes, and `MdSoft` for bold and
   italic — `accent_mid`, mixed halfway between the accent and the body text
   so emphasis does not compete with the headings. Tune the mix with
-  `ACCENT_MIX` in `core/palette.lua`.
+  `ACCENT_MIX` in `core/palette.lua`. A fourth, `MdHighlight`, marks
+  `==text==`: body text on `palette.mark`, 25% accent mixed into the
+  background of the current variant (`HIGHLIGHT_MIX`), 8:1 on dark and
+  10.6:1 on light. render-markdown's default linked it to the inline code
+  colour, and the two could not be told apart.
 - Emphasis colours used to be set from a `ColorScheme` autocmd registered
   in the `after` of the render-markdown spec. **That never ran**: `after`
   fires when the first markdown buffer opens, long after the colorscheme
@@ -346,8 +350,8 @@ so other filetypes are left alone.
 - **A document with a single H1 treats it as its title**: the H1 gets no
   number and the levels below count from it (`1`, `2`, `2.1` instead of
   `1.1`, `1.2`, `1.2.1`). With two or more H1 they are chapters, numbered
-  as above; with none, the hierarchy still shows (`0.1`), as asked. The PDF
-  keeps numbering from H1 in every case: only the editor changes.
+  as above; with none, the hierarchy still shows (`0.1`), on purpose. The
+  PDF keeps numbering from H1 in every case: only the editor changes.
   render-markdown passes the `icons` callback no buffer, so module.nix
   patches `buf = self.context.buf` into its context (`--replace-fail`).
   `h1_count()` reads only the direct children of the top-level sections,
@@ -374,7 +378,11 @@ so other filetypes are left alone.
   space after it, and whatever it does not cover is concealed, the `-`
   marker included: the empty unchecked icon made `- [ ] task` render as a
   bare `task`. The icons are `󰄱` / `󰱒`, or `☐` / `☑` with
-  `nerd_font.enable` off, each followed by a space.
+  `nerd_font.enable` off, each followed by a space. Hiding the marker also
+  took the number off `1. [ ]`; module.nix patches render-markdown's
+  checkbox renderer (`--replace-fail`) to draw numbered markers (`1.`,
+  `1)`) as bullets do, while `-`, `+` and `*` stay hidden. The plugin's own
+  `checkbox.bullet` would have put `•` before every `- [ ]` too.
 - Code carries no background, inline or fenced. `RenderMarkdownCode` and
   `RenderMarkdownCodeInline` are set with `bg = "NONE"` instead of being
   left alone, because their default link is `ColorColumn`, which the
@@ -411,15 +419,21 @@ so other filetypes are left alone.
 - `lua/core/rumdl.lua` is the single place exposing the rules file path to
   `lsp.lua` and `format.lua`, and holds the **save pipeline**,
   `format(bufnr)`, used by both `:w` (format_on_save, which returns nil for
-  markdown) and `:MdFormatDir`: trailing spaces cut to two, rumdl, mdwrap,
-  rumdl. The first rumdl pass exists so mdwrap measures lines after list
-  indentation and markers are fixed; with mdwrap first, rumdl moved a
-  4-space nested item to 2 and the next save rewrapped it. Measured with
-  every plugin attached, the extra pass costs ~40-50 ms per save at 64 KB
-  and 0.05-0.2 s at 635 KB.
+  markdown) and `:MdFormatDir`: trailing spaces cut to two, blank lines
+  around `---`, rumdl, mdwrap, rumdl. The first rumdl pass exists so mdwrap
+  measures lines after list indentation and markers are fixed; with mdwrap
+  first, rumdl moved a 4-space nested item to 2 and the next save rewrapped
+  it. Measured with every plugin attached, the extra pass costs ~40-50 ms
+  per save at 64 KB and 0.05-0.2 s at 635 KB.
 - The cut to two spaces must come first: rumdl's MD009 fix **deletes** a
   run of 3+ trailing spaces, hard break included (a verse ending in three
   spaces joined the next one), and has no option to shorten it instead.
+- `---` and `===` at column 0 are always a rule: `separate_rules()` in
+  mdwrap gives them a blank line on each side before rumdl's first pass,
+  and rewrites `===` as `---`, since markdown has no `===` rule. Right
+  under a line of text either is a setext underline, and rumdl rewrote the
+  text as `## text` or `# text`: a rule typed without its blank line took
+  the paragraph with it. Longer runs (`-------`) count too.
 - rumdl runs through conform with `TIMEOUT_MS` (10 s). The 3 s default was
   exceeded by the first save of a 635 KB file, and conform then dropped
   rumdl silently: the file was saved half formatted.
@@ -493,6 +507,23 @@ so other filetypes are left alone.
   (`formatoptions`, `formatlistpat`, `comments`, indentation) are copied
   across explicitly. Setting `filetype` there instead would fire `FileType`
   and attach Treesitter again, undoing the whole point.
+- **A wrap must never land before a word that opens a block.** `gq` breaks
+  at any space, so ` - `, ` + `, ` * `, ` 1. `, ` # `, ` > `, a run like
+  `---`, a code fence or `<` could start a continuation line and turn the
+  rest of the sentence into a list, a heading or a quote; rumdl then made
+  it permanent (MD032 blank lines around the "list", MD026 the heading's
+  full stop gone). Measured: 16 of 119 placements. Likewise `[[a b]]` split
+  over two lines stopped being a link (37 of 62), and `$a + b$` was split
+  too. `protect()` swaps those spaces for a glue character `gq` does not
+  break at (no-break space, or figure space / narrow no-break space when
+  the text already has one) and the loop swaps it back after `gqq`.
+  Indentation, quote leaders, the list marker and a checkbox are left out.
+  Inline code may still wrap: that is valid. Wikilinks and math are bound
+  only outside code spans, and math only as pandoc reads it (no space
+  inside either dollar, no digit after the closing one): a `` `$$` `` in
+  backticks once paired with a later one and made half a sentence one
+  unbreakable word. Block openers are glued inside code spans too, since
+  blocks are parsed before inline code.
 - Four traps solved in there, not to be reintroduced:
   - `gq` over a multi-line range reads **every** line matching
     `formatlistpat` as a new list item: a wrapped line opening with a year
@@ -692,6 +723,15 @@ On the wrapper's `PATH`: `nixfmt`, `statix`, `deadnix` for Nix; `stylua`,
   wrapper's runtimepath. That template already moved once — it used to
   write `lua/plugins/dankcolors.lua`, and when it stopped, the palette
   silently froze for weeks. The JSON is the stable contract.
+- **Icons are Nerd Font `nf-md` glyphs only, U+F0000 and up.** Every glyph
+  in U+E000-F8FF was lost before the first commit, left as a bare space or
+  an empty string: diagnostic signs, 11 cmp kinds, the dashboard buttons,
+  todo-comments, the neovim.io link, the unchecked checkbox. The ones above
+  U+F0000 survived. No font causes that: the bytes were missing from the
+  files. Pick glyphs by name from Nerd Fonts' `glyphnames.json` and check
+  the codepoints after saving (`grep -P '[\x{E000}-\x{F8FF}]'` must find
+  nothing in `lua/`). The Neovim logo exists only in the lost range, so
+  neovim.io links take the plain web icon.
 - Floating windows get no statusline. Since 0.12 a float shows one when its
   local 'statusline' is set, and lualine sets it on every window it
   refreshes: Oil's preview grew a `[No Name]` bar and stood a row taller

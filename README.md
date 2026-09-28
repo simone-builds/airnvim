@@ -136,7 +136,8 @@ folds, indentation and textobjects.
 
 **Markdown** —
 [render-markdown](https://github.com/MeanderingProgrammer/render-markdown.nvim)
-renders headings, code blocks, tables and checkboxes in the buffer;
+renders headings, code blocks, tables, checkboxes (numbered ones keep their
+number) and `==highlights==` in the buffer;
 [image.nvim](https://github.com/3rd/image.nvim) shows images inline in
 terminals that support the kitty graphics protocol (kitty, WezTerm). It is
 the single heaviest thing in the build — see
@@ -186,6 +187,12 @@ Hard line breaks — two trailing spaces or a backslash, the way verse and
 subtitles are written — survive, and three or more spaces are cut to two
 rather than lost. `#tag` stays an Obsidian tag even at the start of a line,
 while `##Title` typed without its space becomes a proper `## Title`.
+
+A wrap never lands right before a `-`, `#`, `>` or `1.` in the middle of a
+sentence, where it would turn the rest of the sentence into a list item, a
+heading or a quote, and never splits a `[[wikilink]]` or `$inline math$`. A
+line of `---` or `===` right under a line of text is a rule, not a heading:
+saving turns `===` into `---` and puts blank lines around it.
 
 Headings are numbered in the buffer, never in the file, since the PDF
 export numbers them itself: `1`, `1.1`, `1.1.1`. A document with a single

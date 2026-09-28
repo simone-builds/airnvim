@@ -6,7 +6,7 @@
 -- pulls in about 300 MB of nodejs. The user commands for
 -- both live in lua/tools/markdown.lua.
 --
--- No colour is named here. `MdAccent` and `MdSoft` come from
+-- No colour is named here. `MdAccent`, `MdSoft` and the rest come from
 -- lua/core/theme.lua, which derives them from the desktop
 -- palette, so the buffer follows the wallpaper.
 
@@ -354,6 +354,12 @@ return {
 				head = "RenderMarkdownTableHead",
 				row = "RenderMarkdownTableRow",
 			},
+			-- `==text==`: its default links to the inline code
+			-- colour, and the two could not be told apart
+			inline_highlight = {
+				enabled = true,
+				highlight = "MdHighlight",
+			},
 			callout = {},
 			link = {
 				enabled = true,
@@ -371,7 +377,8 @@ return {
 					web = { pattern = "^http", icon = "󰖟 " },
 					youtube = { pattern = "youtube%.com", icon = "󰗃 " },
 					github = { pattern = "github%.com", icon = "󰊤 " },
-					neovim = { pattern = "neovim%.io", icon = " " },
+					-- No neovim.io entry: its logo exists only below
+					-- U+F8FF, a range once lost in a copy as spaces
 					stackoverflow = { pattern = "stackoverflow%.com", icon = "󰓌 " },
 					discord = { pattern = "discord%.com", icon = "󰙯 " },
 					reddit = { pattern = "reddit%.com", icon = "󰑍 " },

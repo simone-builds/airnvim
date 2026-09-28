@@ -168,6 +168,9 @@ end
 --   MdSoft    bold and italic: halfway between the accent and
 --             the body text, so emphasis reads as emphasis
 --             without competing with the headings
+--   MdHighlight `==text==`: body text on a light accent wash,
+--             the one background in markdown. It used to take
+--             the inline code colour, and the two looked alike.
 --
 -- Code keeps no background of its own, inline or fenced: the
 -- editor is transparent, and a panel behind a snippet fights
@@ -179,6 +182,7 @@ local function markdown(p)
 	hl(0, "MdHeading", { fg = p.accent, bold = true })
 	hl(0, "MdAccent", { fg = p.accent })
 	hl(0, "MdSoft", { fg = p.accent_mid })
+	hl(0, "MdHighlight", { fg = p.fg, bg = p.mark })
 
 	-- Rule under headings 1-3, drawn by the terminal's underline
 	-- in the heading colour: solid, long dashes, short dots.

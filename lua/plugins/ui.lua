@@ -213,13 +213,13 @@ return {
 			dashboard.section.header.opts.hl = random_hl
 
 			dashboard.section.buttons.val = {
-				dashboard.button("n", "  New File", ":enew<CR>"),
-				dashboard.button("f", "  Find File", ":Telescope find_files<CR>"),
+				dashboard.button("n", "󰻭  New File", ":enew<CR>"),
+				dashboard.button("f", "󰱽  Find File", ":Telescope find_files<CR>"),
 				dashboard.button("g", "󰈭  Find Word", ":Telescope live_grep<CR>"),
-				dashboard.button("r", "  Recent Files", ":Telescope oldfiles<CR>"),
+				dashboard.button("r", "󰋚  Recent Files", ":Telescope oldfiles<CR>"),
 				dashboard.button(
 					"s",
-					"  Settings",
+					"󰢻  Settings",
 					":Telescope find_files cwd=" .. require("core.paths").config() .. "<CR>"
 				),
 				dashboard.button("q", "➜  Quit", ":qa<CR>"),
@@ -321,12 +321,12 @@ return {
 			},
 
 			keywords = {
-				FIX = { icon = " ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
-				TODO = { icon = " ", color = "my_todo" },
-				HACK = { icon = " ", color = "warning" },
-				WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
-				PERF = { icon = " ", color = "default", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-				NOTE = { icon = " ", color = "hint", alt = { "INFO" } },
+				FIX = { icon = "󰨰 ", color = "error", alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+				TODO = { icon = "󰄴 ", color = "my_todo" },
+				HACK = { icon = "󰈸 ", color = "warning" },
+				WARN = { icon = "󰀪 ", color = "warning", alt = { "WARNING", "XXX" } },
+				PERF = { icon = "󰓅 ", color = "default", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+				NOTE = { icon = "󰎛 ", color = "hint", alt = { "INFO" } },
 				TEST = { icon = "⏲ ", color = "default", alt = { "TESTING", "PASSED", "FAILED" } },
 			},
 		},
