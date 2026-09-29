@@ -453,6 +453,14 @@ searches every command, these included.
   - only `.md` files are touched
 - `:PreviewMd` browser preview; `:PreviewMd stop` ends it
 - `:PasteImage` paste the clipboard image; `␣ip` does the same
+- `:CsvViewToggle` raw text or aligned columns in a `.csv` or `.tsv`;
+  they open aligned, the file itself is not changed:
+  - `:CsvViewEnable` `:CsvViewDisable` on, off
+  - `:CsvViewEnable delimiter=;` another separator; `Tab` completes
+  - `Tab` `S-Tab` next, previous field; `Enter` `S-Enter` row below,
+    above
+  - `if` `af` a field, a field with its comma: `cif`, `daf`
+  - `:CsvViewInfo` delimiter, header and columns it detected
 - `:LzeStatus` installed plugins and whether they are loaded
 - `:LzeNix` plugins provided by Nix
 

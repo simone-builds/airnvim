@@ -591,6 +591,9 @@ in
             # clipboard with the host's wl-paste or xclip
             img-clip-nvim
 
+            # CSV: aligned columns in csv/tsv buffers (336 KB)
+            csvview-nvim
+
             # Treesitter: only the grammars actually used
             nvim-treesitter-textobjects
             (nvim-treesitter.withPlugins (

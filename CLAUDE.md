@@ -104,6 +104,7 @@ lua/plugins/
   treesitter.lua      # treesitter + textobjects
   markdown.lua        # render-markdown, image.nvim, live-preview,
                       # img-clip
+  csv.lua             # csvview.nvim, on when a csv/tsv opens
   notes.lua           # obsidian.nvim
   ai.lua              # codecompanion
   colors.lua          # base16-nvim, the only spec loaded at startup
