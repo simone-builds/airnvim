@@ -11,8 +11,8 @@ local palette = require("core.palette")
 local M = {}
 
 -- "light" or "dark" while a reader theme (lua/core/reader.lua)
--- is on, nil otherwise. It keeps its opaque background and
--- the desktop palette waits until it is turned off.
+-- is on, nil otherwise. The desktop palette waits until it
+-- is turned off.
 M.reader = nil
 
 -- TRANSPARENCY
@@ -22,9 +22,8 @@ vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
 	pattern = "*",
 	desc = "Force transparent background for UI elements",
 	callback = function()
-		if M.reader then
-			return
-		end
+		-- Runs under a reader theme too: its page is the
+		-- terminal's background, set by OSC 11 in reader.lua
 
 		-- Drop the background only, keep fg and styles
 		local function set_transparent(group)

@@ -196,8 +196,9 @@ They go through the clipboard: afterwards it holds the selected words.
   saving would, subdirectories excluded; see airnvim commands below
 - `:MdFormatDirRecursive` the same, subdirectories included
 - `:RenderMarkdown toggle` show the raw text instead of the rendering
-- `:ReaderLight` `:ReaderDark` Gruvbox light or dark on an opaque page,
-  for long reading; `:ReaderOff` back to the desktop colours
+- `:ReaderLight` `:ReaderDark` Gruvbox light or dark, for long reading;
+  `:ReaderOff` back to the desktop colours
+- `Space v` cycle the reader theme: light, dark, off
 
 ### Headings and folds
 

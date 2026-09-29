@@ -1,14 +1,14 @@
 -- READER THEMES
 --------------------------------------------------
--- `:ReaderLight` / `:ReaderDark` put Gruvbox on, opaque, for
--- long reading sessions; `:ReaderOff` goes back to the desktop
+-- `:ReaderLight` / `:ReaderDark` put Gruvbox on for long
+-- reading sessions; `:ReaderOff` goes back to the desktop
 -- palette. Global (a colorscheme is), for this session only.
 --
 -- The desktop palette is not touched: core/theme.lua skips
--- its transparency pass and its file watcher while a reader
--- theme is on, and rebuilds everything from scratch on the
--- way out. Markdown keeps its own look (MdHeading & co.),
--- recoloured from Gruvbox by the same rules.
+-- its file watcher while a reader theme is on, and rebuilds
+-- everything from scratch on the way out. Markdown keeps its
+-- own look (MdHeading & co.), recoloured from Gruvbox by the
+-- same rules.
 
 local M = {}
 
@@ -36,12 +36,14 @@ local function colours(variant)
 end
 
 -- Terminal colours --
--- The grid is nvim's, but the terminal's padding around it
--- and the strip under the last row are painted with the
--- terminal's own background: a cream page got a dark frame,
--- and the cursor kept the desktop colour. OSC 11 and 12 set
--- background and cursor; 111 and 112 give the terminal its
--- own back. Without a UI (headless) nothing is sent.
+-- The page is the terminal's own background: OSC 11 sets it
+-- and the transparency pass in core/theme.lua leaves nvim's
+-- grid unpainted. An opaque Normal did not match the frame:
+-- WezTerm draws its default background (padding, the strip
+-- under the last row) at window_background_opacity, cells
+-- with an explicit colour fully opaque. OSC 12 sets the
+-- cursor; 111 and 112 give the terminal its own back.
+-- Without a UI (headless) nothing is sent.
 local function terminal(p)
 	if not vim.api.nvim_ui_send then
 		return
@@ -143,6 +145,23 @@ end, { desc = "Gruvbox dark, for reading" })
 
 vim.api.nvim_create_user_command("ReaderOff", M.off, {
 	desc = "Back to the desktop palette",
+})
+
+-- Off -> light -> dark -> off
+function M.cycle()
+	local reader = require("core.theme").reader
+	if not reader then
+		M.on("light")
+	elseif reader == "light" then
+		M.on("dark")
+	else
+		M.off()
+	end
+	vim.notify("Reader: " .. (require("core.theme").reader or "off"))
+end
+
+vim.keymap.set("n", "<leader>v", M.cycle, {
+	desc = "Cycle reader theme (light, dark, off)",
 })
 
 return M

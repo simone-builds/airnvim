@@ -229,6 +229,7 @@ terminal mode: there it would delay every typed space.
 | `H` / `L`   | n, x, o | core/keymaps.lua | Start / end of line   |
 | `-`         | n       | files.lua        | Oil in a float        |
 | `<leader>z` | n       | core/spell.lua   | Toggle spell checking |
+| `<leader>v` | n       | core/reader.lua  | Reader: light, dark, off |
 | `<leader>ip`| n       | markdown.lua     | Paste clipboard image |
 | `<leader>t` | n (.md) | core/keymaps.lua | Table of contents (`gO`) |
 | `<CR>`, `<C-LeftMouse>` | n (.md) | core/mdlink.lua | Follow link |
@@ -769,7 +770,7 @@ On the wrapper's `PATH`: `nixfmt`, `statix`, `deadnix` for Nix; `stylua`,
   theme once and then goes deaf.
 - **Reader themes** (`core/reader.lua`) put Gruvbox *over* the desktop
   palette, never in its place. `theme.reader` ("light", "dark" or nil)
-  makes the transparency autocmd and the palette watcher stand aside;
+  makes the palette watcher stand aside;
   `theme.colors` holds Gruvbox under the palette's names (through
   `palette.derive()`), so `theme.markdown()` and `theme.lualine()` work
   unchanged. Both ways go through `highlight clear` and a nil
@@ -787,6 +788,15 @@ On the wrapper's `PATH`: `nixfmt`, `statix`, `deadnix` for Nix; `stylua`,
   cursor) through `nvim_ui_send`, and OSC 111/112 on `:ReaderOff`,
   `VimLeavePre` and `VimSuspend`; `VimResume` sends them again. Without
   it `:ReaderLight` had a dark frame.
+- **The reader page is the terminal's background, not nvim's.** The
+  transparency pass runs under Gruvbox too, so `Normal` has no `bg` and
+  OSC 11 alone colours page and frame. An opaque Gruvbox `Normal` never
+  matched the frame: WezTerm draws its default background (padding, the
+  strip under the last row) at `window_background_opacity` (0.9 here),
+  cells with an explicit colour at `text_background_opacity` (1.0).
+  Measured: page `#fbf1c7` exactly, frame 229-236 red varying with the
+  wallpaper. No escape sequence sets opacity; the page is translucent by
+  choice, like the desktop theme.
 - Nvim sets `background` from **every** OSC 11 reply (a `TermResponse`
   autocmd in its defaults, dropped only when `background` is set outside
   Lua), and the TUI asks again on resume. After `^z`/`fg` the reply said

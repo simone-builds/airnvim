@@ -330,16 +330,17 @@ readable.
 ### Reader themes
 
 For long reading sessions `:ReaderLight` and `:ReaderDark` switch to
-[Gruvbox](https://github.com/ellisonleao/gruvbox.nvim) on an opaque page;
-`:ReaderOff` goes back to the desktop palette. They sit on top of it rather
-than replacing it: while a reader theme is on, the transparency pass and
-the palette watcher stand aside, and a wallpaper change is picked up on the
-way out. Markdown keeps its look, headings in the accent colour and
+[Gruvbox](https://github.com/ellisonleao/gruvbox.nvim); `:ReaderOff` goes
+back to the desktop palette, and `<leader>v` cycles light, dark, off. They
+sit on top of the palette rather than replacing it: while a reader theme is
+on, the palette watcher stands aside, and a wallpaper change is picked up
+on the way out. Markdown keeps its look, headings in the accent colour and
 emphasis halfway to the text, recoloured from Gruvbox by the same rules.
-The terminal's own background and cursor follow the page too, so no frame
-of desktop colour is left around it, and they are handed back when nvim
-exits or is suspended. The theme is global and lasts for the session only.
-The plugin is loaded on the first call.
+The page is the terminal's own background, set to Gruvbox's along with the
+cursor, so it keeps the terminal's transparency and the frame around it
+matches; both are handed back when nvim exits or is suspended. The theme
+is global and lasts for the session only. The plugin is loaded on the
+first call.
 
 ### Weight and what it is made of
 
@@ -438,6 +439,7 @@ The default is `copilot`. No credential is stored in this repository.
 | `-`         | n       | Open oil in a floating window |
 | `<leader>u` | n       | Toggle the undo tree          |
 | `<leader>z` | n       | Toggle spell checking         |
+| `<leader>v` | n       | Reader: light, dark, off      |
 
 **Search** — `<leader>s` is the telescope prefix: `sf` files, `sg` grep,
 `sw` word under cursor, `sb` buffers, `sh` help, `sk` keymaps, `sd`
