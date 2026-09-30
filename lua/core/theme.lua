@@ -72,6 +72,10 @@ vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
 			"ColorColumn",
 			"CursorLineSign",
 			"FoldColumn",
+			-- Gruvbox fills it with the page colour, opaque, so
+			-- the blank separators beside the centred markdown
+			-- column showed as two strips on the translucent page
+			"WinSeparator",
 			-- Diff* groups stay out: clearing them here would
 			-- leave diffs with no colour at all
 			--"DiffAdd", "DiffChange", "DiffDelete", "DiffText",

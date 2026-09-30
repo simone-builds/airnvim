@@ -103,7 +103,7 @@ lua/plugins/
   format.lua          # conform
   treesitter.lua      # treesitter + textobjects
   markdown.lua        # render-markdown, image.nvim, live-preview,
-                      # img-clip
+                      # img-clip, no-neck-pain
   csv.lua             # csvview.nvim, on when a csv/tsv opens
   notes.lua           # obsidian.nvim
   ai.lua              # codecompanion
@@ -175,6 +175,7 @@ constraint.
 | `markdown.images.enable` | `true`         | image.nvim; off saves 137 MB                   |
 | `markdown.images.max_height` | `80`       | Image height cap, % of the window              |
 | `markdown.images.paste_width` | `"15cm"`  | `{ width=... }` on pasted images, for the PDF  |
+| `markdown.center.enable` | `true`         | Centre markdown text on wide screens           |
 | `spell.enable`         | `true`           | Whether `:SpellToggle` may turn spell on       |
 | `spell.languages`      | `[ "it" "en" ]`  | Dictionaries                                   |
 | `spell.filetypes`      | `[ "markdown" ]` | Where the toggle works                         |
@@ -566,8 +567,11 @@ so other filetypes are left alone.
   `max_width` is in terminal cells, not pixels, so it reuses
   `markdown.line_length`: an image is never wider than the prose. Height is
   capped by `markdown.images.max_height`, 80% of the window. Proportions
-  are kept, so whichever cap is reached first sets the size: at 50% a 16:9
-  screenshot in a 28-row window stopped at 50 columns instead of 75
+  are kept, so whichever cap is reached first sets the size. Both caps
+  only shrink: image.nvim draws an image at its own pixel size (pixels /
+  cell width), so the guide's 640 px SVG fills ~62 of the 75 columns.
+  At 50% a 16:9 screenshot in a 28-row window stopped at 50 columns
+  instead of 75
   (measured: cells 11×22 px, 75 columns need 22 rows). In a short window or
   split the image still shrinks below the text width; that is the cap
   working. `window_overlap_clear_enabled` hides images under floats, which
@@ -620,6 +624,32 @@ so other filetypes are left alone.
   ignores it (the treesitter `image` node ends at `)`, so image.nvim still
   finds the picture) and rumdl raises nothing. `mdwrap`'s image-line
   pattern accepts a trailing `{...}` for this.
+- **Centred column on wide screens**: `no-neck-pain.nvim` opens an empty
+  window on each side of the text, so a full-screen nvim no longer shows
+  75 columns hugging the left edge. `centre_markdown()` in `markdown.lua`
+  turns it on while every file window of the tab shows markdown and off
+  otherwise; floats, help and the side windows themselves have no say.
+  Width is left to the plugin: text window `line_length + 10` (85, what
+  a tiled half gives), sides only when each gets 20+ columns, i.e. from
+  ~125 columns. Half a 1080p screen in a tiling window manager (~85)
+  therefore gets no sides, and they come back on `VimResized` when the
+  window grows; `markdown.center.enable` turns it all off. Never call
+  `disable()` from a `VimResized` handler: the plugin's own refresh is
+  still queued on a 2 ms timer and errors on the dropped tab ("init on a
+  nil tab"); the controller waits 30 ms after the last event. `disable()`
+  also refocuses the markdown window, so the controller puts the cursor
+  back (`:split x.lua` left it off the new file). lualine skips the
+  `no-neck-pain` filetype. The two lines at the text's edges were
+  window separators: a separator belongs to the window on its left, so
+  the left side window blanks its own (a space as `vert:` in the
+  plugin's `wo`) and `centre_separators()` does the same for any window
+  touching the right side window, restoring its value when the sides
+  go. It strips an old `vert:` first: a window keeps options per
+  buffer, and `:e` back to a note brought the previous one back. Splits
+  between two files keep their line. `WinSeparator` is in
+  the transparency pass: Gruvbox fills it with `bg0`, opaque, and under
+  a reader theme the blank separators showed as two strips on the
+  translucent page.
 - `guides/` ships in the store with the config and is opened read-only by
   `:MdGuide` / `:NvCheat`. Keep both files clean under the generated rumdl
   rules; the cheatsheet uses headings and plain lists, no tables.

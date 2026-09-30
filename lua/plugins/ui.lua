@@ -19,6 +19,9 @@ return {
 						theme = require("core.theme").lualine(),
 						component_separators = "",
 						section_separators = { left = "", right = "" },
+						-- The empty side windows of the centred
+						-- markdown column (markdown.lua)
+						disabled_filetypes = { statusline = { "no-neck-pain" } },
 					},
 					sections = {
 						lualine_a = {

@@ -126,6 +126,20 @@ in
         '';
       };
 
+      # Empty windows either side of the text, from no-neck-pain
+      # (476 KB, pure lua). Only while every file window shows
+      # markdown and the screen is wide enough; tiled halves
+      # keep the plain layout.
+      markdown.center.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Centre the text of markdown buffers when nvim is about
+          as wide as the screen. Below that width, e.g. two
+          windows side by side, the layout is left alone.
+        '';
+      };
+
       markdown.line_length = lib.mkOption {
         type = lib.types.int;
         default = 75;
@@ -593,6 +607,9 @@ in
 
             # CSV: aligned columns in csv/tsv buffers (336 KB)
             csvview-nvim
+
+            # Markdown text centred on wide screens (476 KB)
+            no-neck-pain-nvim
 
             # Treesitter: only the grammars actually used
             nvim-treesitter-textobjects

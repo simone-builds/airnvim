@@ -142,6 +142,8 @@ number) and `==highlights==` in the buffer;
 terminals that support the kitty graphics protocol (kitty, WezTerm). It is
 the single heaviest thing in the build — see
 [Weight](#weight-and-what-it-is-made-of).
+[no-neck-pain](https://github.com/shortcuts/no-neck-pain.nvim) centres the
+text on wide screens.
 
 **Optional** —
 [obsidian.nvim](https://github.com/obsidian-nvim/obsidian.nvim) for note
@@ -199,6 +201,15 @@ export numbers them itself: `1`, `1.1`, `1.1.1`. A document with a single
 level-1 heading treats it as its title, shows it without a number and
 counts from the level below (`1`, `2`, `2.1`). A skipped level shows as `0`
 (`1.0.1`), so a broken hierarchy is visible rather than hidden.
+
+On a wide screen the text sits in the middle instead of hugging the left
+edge: prose stops at 75 columns, and a full-screen terminal is more than
+twice that. Empty windows open on either side of the text, with no
+separator lines, while every file on screen is markdown. Below about 125
+columns, e.g. two terminals side by side in a tiling window manager, there
+is no room for them and the layout stays as it was; they come back when
+the window grows. Opening a file of another type in a split turns them
+off. `markdown.center.enable = false` removes the feature.
 
 `:MdGuide` opens a markdown syntax guide, callouts included from the
 simplest to nested ones, and `:NvCheat` a cheatsheet: the daily keys first,
@@ -379,6 +390,7 @@ Set these under `wrappers.airnvim.settings`.
 | `markdown.images.enable` | bool | `true`         | Inline images; `false` saves 137 MB                 |
 | `markdown.images.max_height` | int | `80`        | Image height cap, % of the window                   |
 | `markdown.images.paste_width` | str | `"15cm"`   | `{ width=... }` on pasted images, for the PDF       |
+| `markdown.center.enable` | bool | `true`         | Centre markdown text on wide screens                |
 | `spell.enable`         | bool | `true`           | Whether `:SpellToggle` may turn spell on            |
 | `spell.languages`      | list | `[ "it" "en" ]`  | Dictionaries to check against                       |
 | `spell.filetypes`      | list | `[ "markdown" ]` | Where `:SpellToggle` works                          |

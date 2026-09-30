@@ -204,6 +204,155 @@ local function wheel_without_margin()
 	})
 end
 
+-- Centred column --
+-- The text stops at line_length, so on a full screen it filled
+-- the left half and left the right one empty. no-neck-pain adds
+-- an empty window on each side instead. The text window stays a
+-- plain split: image.nvim, Oil's float and the LSP see nothing
+-- new. The width adds the number and sign columns plus some
+-- slack: 85 at 75 columns, what a tiled half of the screen
+-- gives, so a line never wraps on screen.
+local CENTRE_WIDTH = nixInfo(75, "settings", "markdown", "line_length") + 10
+-- Narrowest side window worth having; the plugin opens none
+-- below it and closes them when the terminal shrinks, and opens
+-- them again when it grows. At 1920 px a full-screen nvim is
+-- ~170 columns, sides of ~43; a tiled half is ~85, no room at
+-- all. 20 needs about 125 columns before centring.
+local CENTRE_MIN_SIDE = 20
+
+-- On while every file window of the tab shows markdown. The
+-- width is the plugin's business (above): "on" in a narrow
+-- window just means no side windows yet. Floats (Oil,
+-- telescope), help and the side windows themselves have no
+-- say, so opening them or moving focus never flips the layout.
+-- nil: nothing to decide.
+local function centre_wanted()
+	local markdown = false
+	for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+		local buf = vim.api.nvim_win_get_buf(win)
+		if vim.api.nvim_win_get_config(win).relative == "" and vim.bo[buf].buftype == "" then
+			if vim.bo[buf].filetype ~= "markdown" then
+				return false
+			end
+			markdown = true
+		end
+	end
+	return markdown or nil
+end
+
+local function centre_active()
+	local state = _G.NoNeckPain and _G.NoNeckPain.state
+	return state ~= nil
+		and state.enabled == true
+		and state.tabs ~= nil
+		and state.tabs[vim.api.nvim_get_current_tabpage()] ~= nil
+end
+
+-- A vertical separator belongs to the window on its left: the
+-- left side window draws the line before the text, and the text
+-- window the one after it, towards the right side window. The
+-- side windows blank theirs through the plugin's `wo`; a window
+-- touching the right side window gets `vert: ` here, and its own
+-- value back once the side windows go. Splits between two files
+-- keep their line.
+local function centre_separators()
+	local wins = vim.tbl_filter(function(win)
+		return vim.api.nvim_win_get_config(win).relative == ""
+	end, vim.api.nvim_tabpage_list_wins(0))
+
+	local sides = {}
+	for _, win in ipairs(wins) do
+		if vim.bo[vim.api.nvim_win_get_buf(win)].filetype == "no-neck-pain" then
+			sides[vim.api.nvim_win_get_position(win)[2]] = true
+		end
+	end
+
+	for _, win in ipairs(wins) do
+		-- Text spans col .. col+width-1, the separator col+width,
+		-- and the window beyond it starts one column further
+		local col = vim.api.nvim_win_get_position(win)[2] + vim.api.nvim_win_get_width(win) + 1
+		local saved = vim.w[win].centre_fillchars
+		local opt = { scope = "local", win = win }
+		if sides[col] then
+			if saved == nil then
+				-- A window keeps its options per buffer: `:e` back
+				-- to a note brings back the `vert: ` added before
+				local function without_vert(value)
+					return vim.tbl_filter(function(item)
+						return not vim.startswith(item, "vert:")
+					end, vim.split(value, ",", { trimempty = true }))
+				end
+				local own = without_vert(vim.api.nvim_get_option_value("fillchars", opt))
+				vim.w[win].centre_fillchars = table.concat(own, ",")
+				-- An empty local value means "use the global one"
+				local items = #own > 0 and own or without_vert(vim.go.fillchars)
+				table.insert(items, "vert: ")
+				vim.api.nvim_set_option_value("fillchars", table.concat(items, ","), opt)
+			end
+		elseif saved ~= nil then
+			vim.api.nvim_set_option_value("fillchars", saved, opt)
+			vim.w[win].centre_fillchars = nil
+		end
+	end
+end
+
+local function centre_markdown()
+	local nnp = require("no-neck-pain")
+	local timer = assert(vim.uv.new_timer())
+	local busy = false
+
+	local function apply()
+		-- enable() and disable() finish on a timer; calling them
+		-- again meanwhile would find the state half built
+		if busy then
+			return
+		end
+		local want = centre_wanted()
+		if want == nil or want == centre_active() then
+			return
+		end
+		busy = true
+		-- disable() ends by focusing the markdown window it was
+		-- centring: `:split x.lua` left the cursor off the new file
+		local win = vim.api.nvim_get_current_win()
+		if want then
+			nnp.enable()
+		else
+			nnp.disable()
+		end
+		-- Then look again: events that came in while busy
+		-- were dropped
+		vim.defer_fn(function()
+			busy = false
+			if not want and vim.api.nvim_win_is_valid(win) then
+				vim.api.nvim_set_current_win(win)
+			end
+			apply()
+		end, 50)
+	end
+
+	-- Opening a file fires a burst of events: decide once, and
+	-- after the plugin's own reactions to them. Its layout
+	-- refresh runs on a 2 ms timer and fails if disable() has
+	-- already dropped the tab.
+	local function schedule()
+		timer:stop()
+		timer:start(30, 0, vim.schedule_wrap(apply))
+	end
+
+	local group = vim.api.nvim_create_augroup("MarkdownCentre", { clear = true })
+	vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType", "WinClosed", "TabEnter" }, {
+		group = group,
+		callback = schedule,
+	})
+	-- Side windows opening or closing resize the text window
+	vim.api.nvim_create_autocmd({ "WinResized", "WinNew", "WinClosed", "TabEnter" }, {
+		group = group,
+		callback = vim.schedule_wrap(centre_separators),
+	})
+	schedule()
+end
+
 return {
 	-- Colours, icons and layout inside the buffer --
 	{
@@ -553,6 +702,40 @@ return {
 						return "![$CURSOR]($FILE_PATH)" .. attr
 					end)(),
 				},
+			},
+		},
+	},
+
+	-- Centred column on wide screens --
+	-- See centre_markdown() above. Nothing to toggle by hand:
+	-- the layout follows the files shown and the screen width.
+	{
+		"no-neck-pain.nvim",
+
+		enabled = require("core.setting").bool(true, "settings", "markdown", "center", "enable"),
+		auto_enable = false,
+		lazy = true,
+
+		ft = { "markdown" },
+
+		after = function(plugin)
+			require("no-neck-pain").setup(plugin.opts)
+			centre_markdown()
+		end,
+
+		opts = {
+			width = CENTRE_WIDTH,
+			-- The plugin drops a side at or below this; ours
+			-- demands at least CENTRE_MIN_SIDE, so both agree
+			minSideBufferWidth = CENTRE_MIN_SIDE - 1,
+			autocmds = {
+				-- Focus never lands in an empty side window
+				skipEnteringNoNeckPainBuffer = true,
+			},
+			buffers = {
+				-- No `~` down the empty windows, and no line
+				-- between the left one and the text
+				wo = { fillchars = "eob: ,vert: " },
 			},
 		},
 	},
