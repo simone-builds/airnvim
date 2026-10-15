@@ -180,7 +180,7 @@ constraint.
 | `spell.languages`      | `[ "it" "en" ]`  | Dictionaries                                   |
 | `spell.filetypes`      | `[ "markdown" ]` | Where the toggle works                         |
 | `theme.colors_file`    | `""`             | Palette path; empty means the XDG cache        |
-| `mouse.scroll_lines`   | `5`              | Lines per mouse wheel step                     |
+| `mouse.scroll_lines`   | `2`              | Lines per mouse wheel step                     |
 | `oil.preview`          | `false`          | Open Oil's preview with the list               |
 | `oil.width`            | `75`             | Oil window width, % of the editor              |
 | `nerd_font.enable`     | `true`           | Include file-type icons                        |

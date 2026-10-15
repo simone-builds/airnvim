@@ -267,7 +267,7 @@ in
 
       mouse.scroll_lines = lib.mkOption {
         type = lib.types.ints.positive;
-        default = 5;
+        default = 2;
         description = ''
           Lines moved by one step of the mouse wheel. Neovim's
           own default is 3.

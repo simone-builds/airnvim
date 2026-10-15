@@ -52,7 +52,7 @@ set.showcmd = true
 set.showmatch = true
 
 -- Lines per wheel step, from Nix. Horizontal keeps the default
-set.mousescroll = ("ver:%d,hor:6"):format(nixInfo(5, "settings", "mouse", "scroll_lines"))
+set.mousescroll = ("ver:%d,hor:6"):format(nixInfo(2, "settings", "mouse", "scroll_lines"))
 
 -- The unnamed register is synced with `+`
 set.clipboard = "unnamedplus"
