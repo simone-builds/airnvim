@@ -592,17 +592,19 @@ so other filetypes are left alone.
   back, so the mouse wheel stuck just above an image and never crossed it.
   Tested by sending SGR wheel codes (`ESC[<65;x;yM`) with WezTerm's
   `send-text` command and reading `line("w0")` and `topfill` over
-  `--listen`: without images or with the fix, 5 lines per tick through the
-  image's filler rows.
+  `--listen`: without images or with the fix, one full step per tick
+  through the image's filler rows (measured at 5 lines per step, the
+  `mouse.scroll_lines` default then; it is 2 now).
 - **The wheel scrolls markdown with `scrolloff = 0`**, restored 400 ms
   after the last step (`wheel_without_margin()`, buffer-local expr maps on
   `<ScrollWheelDown>`/`<ScrollWheelUp>`). With the global margin of 10, a
   step that dragged the cursor onto an image line made nvim move the view
   to fit the margin around 22 rows of image: going down one step went
-  *back* a line, going up one jumped 14 lines instead of 5. Native nvim,
-  reproduced with images and with `scrolloff` 5 too; only 0 gave a uniform
-  5 lines per step both ways. Restoring the option does not move the view,
-  so the keyboard keeps its margin.
+  *back* a line, going up one jumped 14 lines instead of 5 (measured with
+  5 lines per step). Native nvim, reproduced with images and with
+  `scrolloff` 5 too; only 0 gave a uniform `mouse.scroll_lines` per step
+  both ways. Restoring the option does not move the view, so the keyboard
+  keeps its margin.
 - Browser preview is `live-preview.nvim` (4 MB, pure lua), started with
   `:PreviewMd` and ended with `:PreviewMd stop`. **module.nix patches out
   the `uv.run()` at the end of its `Server:start`**: that nested loop never
