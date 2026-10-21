@@ -591,16 +591,7 @@ in
             }))
             # Browser preview: pure lua, its own server runs
             # inside nvim, no node or deno (4 MB).
-            # Server:start ends in a nested `uv.run()` that never
-            # returns while the socket listens: pages are served
-            # but the editor freezes on `:PreviewMd`. nvim's main
-            # loop is libuv already and serves the socket alone.
-            (live-preview-nvim.overrideAttrs (old: {
-              postPatch = (old.postPatch or "") + ''
-                substituteInPlace lua/livepreview/server/init.lua \
-                  --replace-fail $'\tuv.run()\n' ""
-              '';
-            }))
+            live-preview-nvim
             # Clipboard images saved into assets/; reads the
             # clipboard with the host's wl-paste or xclip
             img-clip-nvim

@@ -606,11 +606,12 @@ so other filetypes are left alone.
   both ways. Restoring the option does not move the view, so the keyboard
   keeps its margin.
 - Browser preview is `live-preview.nvim` (4 MB, pure lua), started with
-  `:PreviewMd` and ended with `:PreviewMd stop`. **module.nix patches out
-  the `uv.run()` at the end of its `Server:start`**: that nested loop never
-  returns while the socket listens, so pages were served while the editor
-  froze and ignored even SIGTERM. Do not drop the patch when bumping the
-  plugin without checking the line is gone upstream. `dynamic_root = true`
+  `:PreviewMd` and ended with `:PreviewMd stop`. Older versions ended
+  `Server:start` with a nested `uv.run()` that never returned while the
+  socket listened: pages were served while the editor froze and ignored
+  even SIGTERM. module.nix patched it out until upstream dropped the line
+  (0.9.7); if a freeze on `:PreviewMd` ever returns, look there first.
+  `dynamic_root = true`
   serves from the file's own directory, so `assets/` resolves wherever nvim
   was started; `../` paths do not. Callouts and wikilinks are not rendered
   in the browser.
